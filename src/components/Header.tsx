@@ -1,20 +1,29 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Menu, X, User, LogOut, Grid, Settings, PlusCircle } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { Menu, User, LogOut, Grid, Settings, PlusCircle, Search, Bell, MessageSquare } from 'lucide-react';
+import { useMobileDetect } from '@/hooks/use-mobile';
 
-const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface HeaderProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
+  const isMobile = useMobileDetect();
 
   const getInitials = () => {
     if (profile?.first_name && profile?.last_name) {
@@ -24,152 +33,105 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header className="bg-white shadow-sm border-b sticky top-0 z-20">
       <div className="container-custom flex items-center justify-between py-4">
-        {/* Logo */}
-        <Link to="/" className="text-2xl font-bold heading-gradient">
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden"
+          >
+            <Menu size={24} />
+          </Button>
+        )}
+        
+        {/* Logo - Only show on mobile */}
+        <Link to="/" className={`text-2xl font-bold heading-gradient ${isMobile ? '' : 'lg:hidden'}`}>
           Gigstr
         </Link>
         
-        {/* Desktop Menu */}
-        <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/gigs" className="text-gray-600 hover:text-gigstr-purple transition-colors">
-            Find Gigs
-          </Link>
-          <Link to="/create-gig" className="text-gray-600 hover:text-gigstr-purple transition-colors">
-            Post a Gig
-          </Link>
-          {/* More navigation links here */}
-        </nav>
+        {/* Search Bar */}
+        <div className="hidden md:flex flex-1 mx-4 lg:mx-8 relative">
+          <div className="flex items-center w-full max-w-xl relative">
+            <Search className="absolute left-3 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search for gigs or workers..."
+              className="w-full pl-10 py-2 px-4 rounded-full border focus:border-gigstr-purple focus:ring-1 focus:ring-gigstr-purple outline-none"
+            />
+          </div>
+        </div>
         
-        {/* Auth / Profile */}
-        <div className="hidden md:block">
+        {/* Right side actions */}
+        <div className="flex items-center gap-2">
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative rounded-full h-9 w-9 p-0">
-                  <Avatar>
-                    {profile?.avatar_url ? (
-                      <AvatarImage src={profile.avatar_url} alt={profile.username} />
-                    ) : (
-                      <AvatarFallback className="bg-gigstr-purple text-white">
-                        {getInitials()}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+            <>
+              {/* Quick action buttons */}
+              <div className="hidden md:flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                  <Link to="/messages">
+                    <MessageSquare className="h-5 w-5" />
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/dashboard')}>
-                  <Grid className="mr-2 h-4 w-4" />
-                  Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/create-gig')}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Post a Gig
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                  <Link to="/notifications">
+                    <Bell className="h-5 w-5" />
+                  </Link>
+                </Button>
+              </div>
+              
+              {/* User menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative rounded-full h-9 w-9 p-0">
+                    <Avatar>
+                      {profile?.avatar_url ? (
+                        <AvatarImage src={profile.avatar_url} alt={profile.username} />
+                      ) : (
+                        <AvatarFallback className="bg-gigstr-purple text-white">
+                          {getInitials()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/dashboard')}>
+                    <Grid className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/create-gig')}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Post a Gig
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate('/auth')}>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
-              <Button onClick={() => navigate('/auth?tab=signup')}>
+              <Button size="sm" onClick={() => navigate('/auth?tab=signup')}>
                 Sign Up
               </Button>
             </div>
           )}
         </div>
-        
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-gray-600 focus:outline-none"
-          onClick={toggleMenu}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
       </div>
-      
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white border-t">
-          <div className="container-custom py-4 flex flex-col space-y-3">
-            <Link 
-              to="/gigs" 
-              className="text-gray-600 hover:text-gigstr-purple transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Find Gigs
-            </Link>
-            <Link 
-              to="/create-gig" 
-              className="text-gray-600 hover:text-gigstr-purple transition-colors py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Post a Gig
-            </Link>
-            
-            {user ? (
-              <>
-                <div className="border-t my-2"></div>
-                <Link 
-                  to="/dashboard" 
-                  className="text-gray-600 hover:text-gigstr-purple transition-colors py-2 flex items-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Grid className="mr-2 h-4 w-4" /> Dashboard
-                </Link>
-                <Link 
-                  to="/profile" 
-                  className="text-gray-600 hover:text-gigstr-purple transition-colors py-2 flex items-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <User className="mr-2 h-4 w-4" /> Profile
-                </Link>
-                <button 
-                  onClick={() => {
-                    signOut();
-                    setIsMenuOpen(false);
-                  }}
-                  className="text-left text-gray-600 hover:text-gigstr-purple transition-colors py-2 flex items-center"
-                >
-                  <LogOut className="mr-2 h-4 w-4" /> Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="border-t my-2"></div>
-                <Link 
-                  to="/auth" 
-                  className="text-gray-600 hover:text-gigstr-purple transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  to="/auth?tab=signup" 
-                  className="bg-gigstr-purple text-white rounded-md py-2 px-3 text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 };
