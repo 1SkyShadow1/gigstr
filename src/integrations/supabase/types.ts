@@ -9,7 +9,134 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          created_at: string | null
+          gig_id: string
+          id: string
+          proposal: string
+          status: string | null
+          updated_at: string | null
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          gig_id: string
+          id?: string
+          proposal: string
+          status?: string | null
+          updated_at?: string | null
+          worker_id: string
+        }
+        Update: {
+          created_at?: string | null
+          gig_id?: string
+          id?: string
+          proposal?: string
+          status?: string | null
+          updated_at?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_gig_id_fkey"
+            columns: ["gig_id"]
+            isOneToOne: false
+            referencedRelation: "gigs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gigs: {
+        Row: {
+          category: string
+          client_id: string
+          created_at: string | null
+          description: string
+          end_date: string | null
+          id: string
+          location: string | null
+          price: number
+          start_date: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          worker_id: string | null
+        }
+        Insert: {
+          category: string
+          client_id: string
+          created_at?: string | null
+          description: string
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          price: number
+          start_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          worker_id?: string | null
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          created_at?: string | null
+          description?: string
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          price?: number
+          start_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          jobs_completed: number | null
+          last_name: string | null
+          rating: number | null
+          skills: string[] | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          jobs_completed?: number | null
+          last_name?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          jobs_completed?: number | null
+          last_name?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
