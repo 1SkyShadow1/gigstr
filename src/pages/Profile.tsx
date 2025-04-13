@@ -105,7 +105,7 @@ const Profile = () => {
         bio,
         skills,
         avatar_url: avatarUrl,
-        updated_at: new Date(),
+        updated_at: new Date().toISOString(), // Fixed: Convert Date to ISO string
       };
       
       const { error } = await supabase
@@ -194,7 +194,7 @@ const Profile = () => {
                   <div>
                     <span className="text-muted-foreground">Member since:</span>
                     <span className="block font-medium">
-                      {new Date(user.created_at || '').toLocaleDateString()}
+                      {new Date(user.created_at || '').toLocaleDateString('en-ZA')}
                     </span>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ const Profile = () => {
                       value={bio} 
                       onChange={(e) => setBio(e.target.value)} 
                       rows={4}
-                      placeholder="Tell others about yourself and your expertise..."
+                      placeholder="Tell others about your skills and expertise..."
                     />
                   </div>
                   

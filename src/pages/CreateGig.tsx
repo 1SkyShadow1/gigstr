@@ -1,89 +1,108 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 const categories = [
-  "Design",
-  "Development",
-  "Marketing",
-  "Writing",
-  "Admin",
-  "Customer Service",
-  "Legal",
-  "Finance",
+  "Plumbing",
+  "Electrical",
+  "Domestic Work",
+  "Gardening",
+  "Cleaning",
+  "Childcare",
+  "Transportation",
+  "Repairs",
+  "Painting",
+  "Construction",
+  "Security",
+  "IT Support",
+  "Teaching",
+  "Cooking",
   "Other"
 ];
 
-const gigSchema = z.object({
-  title: z.string().min(5, { message: "Title must be at least 5 characters" }),
-  description: z.string().min(20, { message: "Description must be at least 20 characters" }),
-  category: z.string().min(1, { message: "Please select a category" }),
-  price: z.coerce.number().positive({ message: "Price must be greater than 0" }),
-  location: z.string().optional(),
-});
+const locations = [
+  "Johannesburg",
+  "Cape Town",
+  "Durban",
+  "Pretoria",
+  "Port Elizabeth",
+  "Bloemfontein", 
+  "East London",
+  "Polokwane",
+  "Nelspruit",
+  "Kimberley",
+  "Remote",
+  "Other"
+];
 
 const CreateGig = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [price, setPrice] = useState('');
+  const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof gigSchema>>({
-    resolver: zodResolver(gigSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      category: '',
-      price: 0,
-      location: '',
-    },
-  });
-
   useEffect(() => {
-    if (!user && !isLoading) {
+    if (!authLoading && !user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to post a gig",
+        variant: "destructive",
+      });
       navigate('/auth');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, authLoading, navigate, toast]);
 
-  const onSubmit = async (values: z.infer<typeof gigSchema>) => {
-    if (!user) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title || !description || !category || !price) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       setIsSubmitting(true);
       
-      const newGig = {
-        title: values.title,
-        description: values.description,
-        category: values.category,
-        price: values.price,
-        location: values.location || 'Remote',
-        client_id: user.id,
+      const gigData = {
+        title,
+        description,
+        category,
+        price: parseFloat(price),
+        location: location || 'Remote',
+        client_id: user?.id,
+        status: 'open'
       };
       
       const { data, error } = await supabase
         .from('gigs')
-        .insert(newGig)
-        .select()
+        .insert(gigData)
+        .select('id')
         .single();
-      
+        
       if (error) throw error;
       
       toast({
-        title: "Gig created!",
-        description: "Your gig has been posted successfully.",
+        title: "Gig posted successfully",
+        description: "Your gig has been posted and is now visible to workers",
       });
       
       navigate(`/gigs/${data.id}`);
@@ -98,7 +117,7 @@ const CreateGig = () => {
     }
   };
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
@@ -111,142 +130,117 @@ const CreateGig = () => {
       <div className="container-custom max-w-3xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Post a New Gig</h1>
-          <p className="text-muted-foreground">Create a gig to find the perfect freelancer for your project</p>
+          <p className="text-muted-foreground">Describe the work you need done and find skilled workers</p>
         </div>
         
         <Card>
-          <CardHeader>
-            <CardTitle>Gig Details</CardTitle>
-            <CardDescription>
-              Enter the details of the gig you want to post
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="E.g., 'Design a Modern Logo'" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        A clear title helps attract the right freelancers
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+          <form onSubmit={handleSubmit}>
+            <CardHeader>
+              <CardTitle>Gig Details</CardTitle>
+              <CardDescription>Provide details about the work you need completed</CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <div>
+                <Label htmlFor="title" className="mb-2 block">Gig Title*</Label>
+                <Input 
+                  id="title" 
+                  placeholder="E.g., Fix kitchen sink leak"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Provide details about the gig, requirements, and expectations"
-                          rows={6}
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Be specific about your requirements and deliverables
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              </div>
+              
+              <div>
+                <Label htmlFor="description" className="mb-2 block">Description*</Label>
+                <Textarea 
+                  id="description" 
+                  placeholder="Describe the work, requirements, timeline, etc."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={5}
+                  required
                 />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map(category => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Fixed price for the project
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="category" className="mb-2 block">Category*</Label>
+                  <Select
+                    value={category}
+                    onValueChange={setCategory}
+                    required
+                  >
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location (optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="E.g., 'Remote' or 'New York, NY'"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Leave empty for remote work
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex justify-end gap-4 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={() => navigate(-1)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Creating..." : "Create Gig"}
-                  </Button>
+                <div>
+                  <Label htmlFor="price" className="mb-2 block">Budget (ZAR)*</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">R</span>
+                    <Input 
+                      id="price" 
+                      type="number"
+                      placeholder="Amount in ZAR"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="pl-8"
+                      min="0"
+                      required
+                    />
+                  </div>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
+              </div>
+              
+              <div>
+                <Label htmlFor="location" className="mb-2 block">Location</Label>
+                <Select
+                  value={location}
+                  onValueChange={setLocation}
+                >
+                  <SelectTrigger id="location">
+                    <SelectValue placeholder="Select location or remote" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(loc => (
+                      <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+            
+            <CardFooter className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate('/gigs')}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Posting...
+                  </>
+                ) : "Post Gig"}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </div>

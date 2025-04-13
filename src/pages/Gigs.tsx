@@ -7,18 +7,33 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, DollarSign, MapPin, Search, Filter } from 'lucide-react';
+import { Clock, CurrencyIcon, MapPin, Search, Filter } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import WorkerBadge from '@/components/WorkerBadge';
+
+// Custom currency icon for South African Rand
+const CurrencyRand = () => (
+  <div className="flex items-center justify-center w-4 h-4">
+    <span className="font-bold text-xs">R</span>
+  </div>
+);
 
 const categories = [
   "All Categories",
-  "Design",
-  "Development",
-  "Marketing",
-  "Writing",
-  "Admin",
-  "Customer Service",
-  "Legal",
-  "Finance",
+  "Plumbing",
+  "Electrical",
+  "Domestic Work",
+  "Gardening",
+  "Cleaning",
+  "Childcare",
+  "Transportation",
+  "Repairs",
+  "Painting",
+  "Construction",
+  "Security",
+  "IT Support",
+  "Teaching",
+  "Cooking",
   "Other"
 ];
 
@@ -78,6 +93,15 @@ const Gigs = () => {
     return filteredGigs;
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-ZA', {
+      style: 'currency',
+      currency: 'ZAR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
   const filteredGigs = handleSearch();
 
   return (
@@ -86,7 +110,7 @@ const Gigs = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Available Gigs</h1>
-            <p className="text-muted-foreground">Browse and apply for available opportunities</p>
+            <p className="text-muted-foreground">Find work opportunities in your area</p>
           </div>
           <Button onClick={() => navigate('/create-gig')}>Post a New Gig</Button>
         </div>
@@ -129,17 +153,24 @@ const Gigs = () => {
             {filteredGigs.map(gig => (
               <Card key={gig.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="line-clamp-1">{gig.title}</CardTitle>
-                  <CardDescription>
-                    Posted by {gig.client.profiles[0]?.username || 'Anonymous'}
-                  </CardDescription>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="line-clamp-1">{gig.title}</CardTitle>
+                      <CardDescription>
+                        Posted by {gig.client.profiles[0]?.username || 'Anonymous'}
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="bg-gigstr-purple/10 text-gigstr-purple">
+                      {gig.category}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <p className="line-clamp-3 text-sm mb-4">{gig.description}</p>
                   <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                     <span className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-1 text-gigstr-purple" />
-                      ${gig.price}
+                      <CurrencyRand />
+                      <span className="ml-1">{formatPrice(gig.price)}</span>
                     </span>
                     <span className="flex items-center">
                       <MapPin className="h-4 w-4 mr-1 text-gigstr-purple" />
@@ -147,7 +178,7 @@ const Gigs = () => {
                     </span>
                     <span className="flex items-center">
                       <Clock className="h-4 w-4 mr-1 text-gigstr-purple" />
-                      {new Date(gig.created_at).toLocaleDateString()}
+                      {new Date(gig.created_at).toLocaleDateString('en-ZA')}
                     </span>
                   </div>
                 </CardContent>
@@ -168,7 +199,7 @@ const Gigs = () => {
             <p className="text-muted-foreground mb-6">
               {searchQuery || categoryFilter !== 'All Categories' 
                 ? "Try changing your search criteria" 
-                : "No gigs are currently available"}
+                : "No gigs are currently available in your area"}
             </p>
             <Button onClick={() => navigate('/create-gig')}>Post a New Gig</Button>
           </div>
