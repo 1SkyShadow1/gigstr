@@ -1,6 +1,13 @@
 
 import React from 'react';
 import { Star, Quote } from 'lucide-react';
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselPrevious, 
+  CarouselNext 
+} from "@/components/ui/carousel";
 
 const testimonials = [
   {
@@ -23,13 +30,32 @@ const testimonials = [
     image: "https://randomuser.me/api/portraits/women/63.jpg",
     quote: "As someone who juggles multiple clients, Gigstr's project management tools have been a lifesaver for staying organized and productive.",
     rating: 4
+  },
+  {
+    name: "David Smith",
+    role: "UI/UX Designer",
+    image: "https://randomuser.me/api/portraits/men/52.jpg",
+    quote: "Since joining Gigstr, I've increased my client base by 70% and doubled my monthly income. The platform's visibility is incredible!",
+    rating: 5
+  },
+  {
+    name: "Sophia Lee",
+    role: "Marketing Specialist",
+    image: "https://randomuser.me/api/portraits/women/28.jpg",
+    quote: "The client matching algorithm is spot on! I'm getting connected with exactly the type of businesses I want to work with.",
+    rating: 5
   }
 ];
 
 const TestimonialSection = () => {
   return (
-    <section id="testimonials" className="section-padding bg-white">
-      <div className="container-custom">
+    <section id="testimonials" className="section-padding bg-white relative">
+      {/* Background pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-5">
+        <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-fixed bg-center"></div>
+      </div>
+      
+      <div className="container-custom relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="heading-gradient">What Our Users Say</span>
@@ -39,41 +65,46 @@ const TestimonialSection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={index}
-              className="bg-white p-8 rounded-xl shadow-md border border-gray-100 relative card-hover"
-            >
-              <div className="absolute top-6 right-8 text-gray-200">
-                <Quote size={48} />
-              </div>
-              <div className="flex items-center gap-4 mb-6">
-                <img 
-                  src={testimonial.image} 
-                  alt={testimonial.name}
-                  className="h-16 w-16 rounded-full object-cover" 
-                />
-                <div>
-                  <h3 className="font-semibold">{testimonial.name}</h3>
-                  <p className="text-gray-500 text-sm">{testimonial.role}</p>
+        <Carousel opts={{ align: "start", loop: true }}>
+          <CarouselContent className="-ml-1">
+            {testimonials.map((testimonial, index) => (
+              <CarouselItem key={index} className="pl-1 basis-full md:basis-1/2 lg:basis-1/3">
+                <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 relative h-full card-hover backdrop-blur-sm">
+                  <div className="absolute top-6 right-8 text-gray-200">
+                    <Quote size={48} />
+                  </div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="h-16 w-16 rounded-full object-cover" 
+                    />
+                    <div>
+                      <h3 className="font-semibold">{testimonial.name}</h3>
+                      <p className="text-gray-500 text-sm">{testimonial.role}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i}
+                        size={18}
+                        className={i < testimonial.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
+                      />
+                    ))}
+                  </div>
+                  
+                  <p className="text-gray-700 italic relative z-10">{testimonial.quote}</p>
                 </div>
-              </div>
-              
-              <div className="flex mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i}
-                    size={18}
-                    className={i < testimonial.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} 
-                  />
-                ))}
-              </div>
-              
-              <p className="text-gray-700 italic relative z-10">{testimonial.quote}</p>
-            </div>
-          ))}
-        </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-center mt-8">
+            <CarouselPrevious className="static transform-none mx-2" />
+            <CarouselNext className="static transform-none mx-2" />
+          </div>
+        </Carousel>
       </div>
     </section>
   );

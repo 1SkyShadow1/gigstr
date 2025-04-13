@@ -31,8 +31,13 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="section-padding bg-gray-50">
-      <div className="container-custom">
+    <section id="how-it-works" className="section-padding bg-gray-50 relative">
+      {/* Background pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-5">
+        <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-fixed bg-center"></div>
+      </div>
+      
+      <div className="container-custom relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="heading-gradient">How It Works</span>
@@ -49,7 +54,7 @@ const HowItWorks = () => {
           <div className="grid md:grid-cols-4 gap-8 relative z-10">
             {steps.map((step, index) => (
               <div key={index} className="flex flex-col items-center text-center">
-                <div className={`h-20 w-20 rounded-full bg-white shadow-md flex items-center justify-center mb-6 bg-gradient-to-br ${step.color} text-white`}>
+                <div className={`h-20 w-20 rounded-full bg-white shadow-md flex items-center justify-center mb-6 bg-gradient-to-br ${step.color} text-white transform transition-transform hover:scale-110 duration-300`}>
                   {step.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{step.title}</h3>

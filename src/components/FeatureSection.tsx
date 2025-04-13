@@ -37,8 +37,13 @@ const features = [
 
 const FeatureSection = () => {
   return (
-    <section id="features" className="section-padding bg-white">
-      <div className="container-custom">
+    <section id="features" className="section-padding bg-white relative">
+      {/* Background pattern */}
+      <div className="absolute inset-0 pointer-events-none opacity-5">
+        <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-fixed bg-center"></div>
+      </div>
+      
+      <div className="container-custom relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="heading-gradient">Features</span> You'll Love
@@ -52,7 +57,7 @@ const FeatureSection = () => {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover"
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover backdrop-blur-sm"
             >
               <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-gigstr-purple mb-4">
                 {feature.icon}

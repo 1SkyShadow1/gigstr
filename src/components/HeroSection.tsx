@@ -5,10 +5,15 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 
 const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-br from-white to-purple-50 pt-20 pb-16 md:pt-32 md:pb-24">
-      <div className="container-custom">
+    <section className="relative bg-gradient-to-br from-white to-purple-50 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10 z-0">
+        <div className="absolute top-0 left-0 right-0 h-full bg-[url('https://images.unsplash.com/photo-1636633762833-5d1658f1e29b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-cover bg-center"></div>
+      </div>
+      
+      <div className="container-custom relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               <span className="heading-gradient">Earn Money</span> Doing What You Love
             </h1>
@@ -32,7 +37,7 @@ const HeroSection = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button className="btn-primary text-lg h-12 px-8">
+              <Button className="btn-primary text-lg h-12 px-8 shadow-xl hover:shadow-gigstr-purple/20">
                 Find Gigs Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
