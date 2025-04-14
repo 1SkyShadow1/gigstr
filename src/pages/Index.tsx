@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import FeatureSection from '@/components/FeatureSection';
@@ -11,6 +12,7 @@ import { ArrowRight } from 'lucide-react';
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -32,7 +34,11 @@ const Index = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Join thousands of freelancers who have found success on our platform. Create your account in minutes.
             </p>
-            <Button size="lg" className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300">
+            <Button 
+              size="lg" 
+              className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300"
+              onClick={() => navigate('/auth')}
+            >
               Sign Up Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

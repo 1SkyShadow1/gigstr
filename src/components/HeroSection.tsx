@@ -2,8 +2,11 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  
   return (
     <section className="relative bg-gradient-to-br from-white to-purple-50 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       {/* Background pattern */}
@@ -37,11 +40,18 @@ const HeroSection = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button className="btn-primary text-lg h-12 px-8 shadow-xl hover:shadow-gigstr-purple/20">
+              <Button 
+                className="btn-primary text-lg h-12 px-8 shadow-xl hover:shadow-gigstr-purple/20"
+                onClick={() => navigate('/gigs')}
+              >
                 Find Workers Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" className="border-gigstr-purple text-gigstr-purple hover:bg-gigstr-purple/10 text-lg h-12">
+              <Button 
+                variant="outline" 
+                className="border-gigstr-purple text-gigstr-purple hover:bg-gigstr-purple/10 text-lg h-12"
+                onClick={() => navigate('/create-gig')}
+              >
                 Offer Your Services
               </Button>
             </div>
