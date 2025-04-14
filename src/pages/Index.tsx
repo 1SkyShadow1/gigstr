@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import FeatureSection from '@/components/FeatureSection';
@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
 const Index = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-grow">
         <HeroSection />
         <FeatureSection />
