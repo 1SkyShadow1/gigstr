@@ -18,6 +18,10 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
+import Help from "./pages/Help";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,20 @@ const App = () => (
             <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
             <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
             <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
+            <Route path="/about" element={<MainLayout><About /></MainLayout>} />
+            <Route path="/help" element={<MainLayout><Help /></MainLayout>} />
+            <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
+            <Route path="/terms" element={<MainLayout><Terms /></MainLayout>} />
+            <Route path="/community" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/tutorials" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/partners" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/careers" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/blog" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/press" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/security" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/cookies" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/accessibility" element={<MainLayout><NotFound /></MainLayout>} />
+            <Route path="/sitemap" element={<MainLayout><NotFound /></MainLayout>} />
             <Route path="*" element={<MainLayout><NotFound /></MainLayout>} />
           </Routes>
         </BrowserRouter>

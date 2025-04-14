@@ -9,10 +9,12 @@ import TestimonialSection from '@/components/TestimonialSection';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -34,14 +36,16 @@ const Index = () => {
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Join thousands of freelancers who have found success on our platform. Create your account in minutes.
             </p>
-            <Button 
-              size="lg" 
-              className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300"
-              onClick={() => navigate('/auth')}
-            >
-              Sign Up Now
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            {!user && (
+              <Button 
+                size="lg" 
+                className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300"
+                onClick={() => navigate('/auth')}
+              >
+                Sign Up Now
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            )}
           </div>
         </section>
         
