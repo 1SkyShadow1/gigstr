@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, CurrencyIcon, MapPin, Search, Filter } from 'lucide-react';
+import { Clock, MapPin, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import WorkerBadge from '@/components/WorkerBadge';
 
@@ -52,23 +52,44 @@ const Gigs = () => {
   const fetchGigs = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      // Modified query to remove the nested join that was causing the error
+      const { data, error } = await supabase
         .from('gigs')
-        .select(`
-          *,
-          client:client_id(
-            id,
-            profiles:profiles(first_name, last_name, username, avatar_url)
-          )
-        `)
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
       
-      const { data, error } = await query;
-      
       if (error) throw error;
-      setGigs(data || []);
+      
+      // Fetch client profiles in a separate query if needed
+      if (data && data.length > 0) {
+        const clientIds = [...new Set(data.map(gig => gig.client_id))];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', clientIds);
+          
+        if (profilesError) throw profilesError;
+        
+        // Merge the profiles data with gigs
+        const gigsWithClientData = data.map(gig => {
+          const clientProfile = profilesData?.find(profile => profile.id === gig.client_id);
+          return {
+            ...gig,
+            client: {
+              id: gig.client_id,
+              profiles: clientProfile ? [clientProfile] : []
+            }
+          };
+        });
+        
+        setGigs(gigsWithClientData);
+      } else {
+        setGigs(data || []);
+      }
     } catch (error: any) {
+      console.error("Gigs fetch error:", error);
       toast({
         title: "Error fetching gigs",
         description: error.message,
@@ -157,7 +178,7 @@ const Gigs = () => {
                     <div>
                       <CardTitle className="line-clamp-1">{gig.title}</CardTitle>
                       <CardDescription>
-                        Posted by {gig.client.profiles[0]?.username || 'Anonymous'}
+                        Posted by {gig.client?.profiles?.[0]?.username || 'Anonymous'}
                       </CardDescription>
                     </div>
                     <Badge variant="outline" className="bg-gigstr-purple/10 text-gigstr-purple">
