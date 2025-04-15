@@ -25,6 +25,13 @@ import Terms from "./pages/Terms";
 import Rewards from "./pages/Rewards";
 import Tools from "./pages/Tools";
 
+// Tool pages
+import Invoicing from "./pages/tools/Invoicing";
+import TimeTracking from "./pages/tools/TimeTracking";
+import ProjectManagement from "./pages/tools/ProjectManagement";
+import SchedulePlanner from "./pages/tools/SchedulePlanner";
+import Contracts from "./pages/tools/Contracts";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,7 +53,15 @@ const App = () => (
             <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
             <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
             <Route path="/rewards" element={<MainLayout><Rewards /></MainLayout>} />
+            
+            {/* Tools routes */}
             <Route path="/tools" element={<MainLayout><Tools /></MainLayout>} />
+            <Route path="/tools/invoicing" element={<MainLayout><Invoicing /></MainLayout>} />
+            <Route path="/tools/time-tracking" element={<MainLayout><TimeTracking /></MainLayout>} />
+            <Route path="/tools/project-management" element={<MainLayout><ProjectManagement /></MainLayout>} />
+            <Route path="/tools/schedule-planner" element={<MainLayout><SchedulePlanner /></MainLayout>} />
+            <Route path="/tools/contracts" element={<MainLayout><Contracts /></MainLayout>} />
+            
             <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/help" element={<MainLayout><Help /></MainLayout>} />
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />

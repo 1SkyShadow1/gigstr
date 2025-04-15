@@ -118,6 +118,228 @@ interface CustomDatabase extends Database {
           verification_status?: string | null;
         };
       };
+      invoices: {
+        Row: {
+          id: string;
+          user_id: string;
+          client_name: string;
+          client_email: string | null;
+          amount: number;
+          issued_date: string;
+          due_date: string;
+          status: string;
+          items: any | null;
+          notes: string | null;
+          invoice_number: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          client_name: string;
+          client_email?: string | null;
+          amount: number;
+          issued_date?: string;
+          due_date: string;
+          status?: string;
+          items?: any | null;
+          notes?: string | null;
+          invoice_number: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          client_name?: string;
+          client_email?: string | null;
+          amount?: number;
+          issued_date?: string;
+          due_date?: string;
+          status?: string;
+          items?: any | null;
+          notes?: string | null;
+          invoice_number?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      time_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          project: string;
+          description: string | null;
+          start_time: string;
+          end_time: string | null;
+          duration: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          project: string;
+          description?: string | null;
+          start_time: string;
+          end_time?: string | null;
+          duration?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          project?: string;
+          description?: string | null;
+          start_time?: string;
+          end_time?: string | null;
+          duration?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      projects: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          status: string;
+          deadline: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          status?: string;
+          deadline?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string | null;
+          status?: string;
+          deadline?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      tasks: {
+        Row: {
+          id: string;
+          project_id: string;
+          title: string;
+          description: string | null;
+          status: string;
+          due_date: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          title: string;
+          description?: string | null;
+          status?: string;
+          due_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          title?: string;
+          description?: string | null;
+          status?: string;
+          due_date?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      schedules: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          start_time: string;
+          end_time: string;
+          description: string | null;
+          recurrence: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          start_time: string;
+          end_time: string;
+          description?: string | null;
+          recurrence?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          start_time?: string;
+          end_time?: string;
+          description?: string | null;
+          recurrence?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      contracts: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          client_name: string;
+          start_date: string | null;
+          end_date: string | null;
+          terms: string | null;
+          status: string;
+          file_path: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          client_name: string;
+          start_date?: string | null;
+          end_date?: string | null;
+          terms?: string | null;
+          status?: string;
+          file_path?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          client_name?: string;
+          start_date?: string | null;
+          end_date?: string | null;
+          terms?: string | null;
+          status?: string;
+          file_path?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
