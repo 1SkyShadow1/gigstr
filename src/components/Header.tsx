@@ -12,8 +12,9 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Menu, User, LogOut, Grid, Settings, PlusCircle, Search, Bell, MessageSquare } from 'lucide-react';
+import { Menu, User, LogOut, Grid, Settings, PlusCircle, Search, Bell, MessageSquare, Award, Clock } from 'lucide-react';
 import { useMobileDetect } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -33,7 +34,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b sticky top-0 z-20">
+    <header className="bg-white shadow-sm border-b fixed top-0 left-0 right-0 z-50">
       <div className="container-custom flex items-center justify-between py-4">
         {/* Mobile Menu Button */}
         {isMobile && (
@@ -47,8 +48,8 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
           </Button>
         )}
         
-        {/* Logo - Only show on mobile */}
-        <Link to="/" className={`text-2xl font-bold heading-gradient ${isMobile ? '' : 'lg:hidden'}`}>
+        {/* Logo */}
+        <Link to="/" className="text-2xl font-bold heading-gradient">
           Gigstr
         </Link>
         
@@ -80,6 +81,16 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
                     <Bell className="h-5 w-5" />
                   </Link>
                 </Button>
+                <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                  <Link to="/rewards">
+                    <Award className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                  <Link to="/tools">
+                    <Clock className="h-5 w-5" />
+                  </Link>
+                </Button>
               </div>
               
               {/* User menu */}
@@ -95,6 +106,11 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
                         </AvatarFallback>
                       )}
                     </Avatar>
+                    {profile?.points && profile.points > 0 && (
+                      <Badge variant="default" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
+                        {profile.points}
+                      </Badge>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -111,6 +127,14 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
                   <DropdownMenuItem onClick={() => navigate('/create-gig')}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Post a Gig
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/rewards')}>
+                    <Award className="mr-2 h-4 w-4" />
+                    Rewards ({profile?.points || 0})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/tools')}>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Tools
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>

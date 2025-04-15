@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import FeatureSection from '@/components/FeatureSection';
 import HowItWorks from '@/components/HowItWorks';
@@ -12,13 +11,11 @@ import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-grow">
         <HeroSection />
         <FeatureSection />

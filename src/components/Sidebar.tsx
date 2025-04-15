@@ -13,7 +13,9 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  Award,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -79,22 +81,10 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed top-0 bottom-0 lg:left-0 z-40 w-[280px] bg-white border-r shadow-sm transition-transform duration-300",
+          "fixed top-0 bottom-0 lg:left-0 z-40 w-[280px] bg-white border-r shadow-sm transition-transform duration-300 mt-16",
           isOpen ? "left-0" : "-left-[280px] lg:left-0"
         )}
       >
-        {/* Sidebar header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b sticky top-0 bg-white z-10">
-          <Link to="/" className="text-2xl font-bold heading-gradient">
-            Gigstr
-          </Link>
-          {isMobile && (
-            <Button variant="ghost" size="sm" onClick={handleToggle}>
-              <X size={20} />
-            </Button>
-          )}
-        </div>
-        
         {/* Sidebar content */}
         <ScrollArea className="h-[calc(100vh-4rem)] py-2 px-2">
           <div className="mb-4">
@@ -125,6 +115,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
                   <SidebarItem icon={MessageSquare} label="Messages" to="/messages" onClick={closeSidebarOnMobile} />
                   <SidebarItem icon={Bell} label="Notifications" to="/notifications" onClick={closeSidebarOnMobile} />
                   <SidebarItem icon={User} label="Profile" to="/profile" onClick={closeSidebarOnMobile} />
+                  <SidebarItem icon={Award} label="Rewards" to="/rewards" onClick={closeSidebarOnMobile} />
+                  <SidebarItem icon={Clock} label="Tools" to="/tools" onClick={closeSidebarOnMobile} />
                   <SidebarItem icon={Settings} label="Settings" to="/settings" onClick={closeSidebarOnMobile} />
                 </div>
                 

@@ -22,6 +22,8 @@ import About from "./pages/About";
 import Help from "./pages/Help";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Rewards from "./pages/Rewards";
+import Tools from "./pages/Tools";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,8 @@ const App = () => (
             <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
             <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
             <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
+            <Route path="/rewards" element={<MainLayout><Rewards /></MainLayout>} />
+            <Route path="/tools" element={<MainLayout><Tools /></MainLayout>} />
             <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/help" element={<MainLayout><Help /></MainLayout>} />
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />

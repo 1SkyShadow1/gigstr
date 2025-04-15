@@ -17,7 +17,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
-      <main className={`flex-1 transition-all duration-300 ${!isMobile ? 'lg:pl-[280px]' : ''}`}>
+      <main className={`flex-1 transition-all duration-300 mt-16 ${!isMobile ? 'lg:pl-[280px]' : ''}`}>
         <div className="container-custom py-6">
           {children}
         </div>

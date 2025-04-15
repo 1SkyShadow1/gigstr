@@ -39,6 +39,50 @@ interface CustomDatabase extends Database {
           read?: boolean;
         };
       };
+      profiles: {
+        Row: {
+          id: string;
+          username: string | null;
+          avatar_url: string | null;
+          first_name: string | null;
+          last_name: string | null;
+          bio: string | null;
+          skills: string[] | null;
+          created_at: string | null;
+          updated_at: string | null;
+          rating: number | null;
+          jobs_completed: number | null;
+          points: number | null;
+        };
+        Insert: {
+          id: string;
+          username?: string | null;
+          avatar_url?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          bio?: string | null;
+          skills?: string[] | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          rating?: number | null;
+          jobs_completed?: number | null;
+          points?: number | null;
+        };
+        Update: {
+          id?: string;
+          username?: string | null;
+          avatar_url?: string | null;
+          first_name?: string | null;
+          last_name?: string | null;
+          bio?: string | null;
+          skills?: string[] | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          rating?: number | null;
+          jobs_completed?: number | null;
+          points?: number | null;
+        };
+      };
     };
   };
 }
