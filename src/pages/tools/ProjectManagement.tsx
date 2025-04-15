@@ -4,628 +4,929 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import PageHeader from '@/components/PageHeader';
+import { format } from 'date-fns';
+import { Plus, Pencil, Trash2, Calendar, CheckCircle, AlertCircle, ClipboardList, XCircle } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import { ClipboardList, Plus, Calendar, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
-import { format, isPast, isToday } from 'date-fns';
-import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import PageHeader from '@/components/PageHeader';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+type Project = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  deadline: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+};
+
+type Task = {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 const ProjectManagement = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<any>(null);
-  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openTaskDialog, setOpenTaskDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openDeleteTaskDialog, setOpenDeleteTaskDialog] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
   
-  const projectForm = useForm({
-    defaultValues: {
-      name: '',
-      description: '',
-      deadline: ''
-    }
-  });
-
-  const taskForm = useForm({
-    defaultValues: {
-      title: '',
-      description: '',
-      dueDate: '',
-      projectId: ''
-    }
-  });
-
+  // Form states
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectStatus, setProjectStatus] = useState('active');
+  const [projectDeadline, setProjectDeadline] = useState<Date | undefined>(undefined);
+  
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [taskStatus, setTaskStatus] = useState('todo');
+  const [taskDueDate, setTaskDueDate] = useState<Date | undefined>(undefined);
+  const [taskProject, setTaskProject] = useState<string | undefined>(undefined);
+  
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
+    if (user) {
+      fetchProjects();
+      fetchTasks();
     }
-    
-    fetchProjects();
-  }, [user, navigate]);
-
+  }, [user]);
+  
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      
-      const { data: projectsData, error: projectsError } = await supabase
+      const { data, error } = await supabase
         .from('projects')
         .select('*')
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-      
-      if (projectsError) throw projectsError;
-      
-      // For each project, fetch its tasks
-      const projectsWithTasks = await Promise.all(
-        (projectsData || []).map(async (project) => {
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('tasks')
-            .select('*')
-            .eq('project_id', project.id)
-            .order('created_at', { ascending: true });
-          
-          if (tasksError) throw tasksError;
-          
-          return {
-            ...project,
-            tasks: tasksData || []
-          };
-        })
-      );
-      
-      setProjects(projectsWithTasks);
-      if (projectsWithTasks.length > 0 && !selectedProject) {
-        setSelectedProject(projectsWithTasks[0]);
-      }
-    } catch (error) {
-      console.error("Error fetching projects:", error);
+        
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to load projects",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch projects. ' + error.message,
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
-
-  const openNewProjectDialog = () => {
+  
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          projects(id, name)
+        `)
+        .order('due_date', { ascending: true });
+        
+      if (error) throw error;
+      setTasks(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch tasks. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleCreateProject = async () => {
+    if (!projectName) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Project name is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const newProject = {
+        user_id: user?.id,
+        name: projectName,
+        description: projectDescription || null,
+        status: projectStatus,
+        deadline: projectDeadline ? projectDeadline.toISOString() : null,
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .insert([newProject]);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Project created successfully!',
+      });
+      
+      resetProjectForm();
+      setOpenDialog(false);
+      fetchProjects();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create project. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleUpdateProject = async () => {
+    if (!projectName || !currentProject) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Project name is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const updatedProject = {
+        name: projectName,
+        description: projectDescription || null,
+        status: projectStatus,
+        deadline: projectDeadline ? projectDeadline.toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase
+        .from('projects')
+        .update(updatedProject)
+        .eq('id', currentProject.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Project updated successfully!',
+      });
+      
+      resetProjectForm();
+      setOpenDialog(false);
+      fetchProjects();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update project. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleDeleteProject = async () => {
+    if (!currentProject) return;
+    
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', currentProject.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Project deleted successfully!',
+      });
+      
+      setOpenDeleteDialog(false);
+      fetchProjects();
+      fetchTasks(); // Refresh tasks as some might be linked to the deleted project
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete project. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleCreateTask = async () => {
+    if (!taskTitle || !taskProject) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Task title and project are required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const newTask = {
+        project_id: taskProject,
+        title: taskTitle,
+        description: taskDescription || null,
+        status: taskStatus,
+        due_date: taskDueDate ? taskDueDate.toISOString() : null,
+      };
+      
+      const { error } = await supabase
+        .from('tasks')
+        .insert([newTask]);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Task created successfully!',
+      });
+      
+      resetTaskForm();
+      setOpenTaskDialog(false);
+      fetchTasks();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create task. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleUpdateTask = async () => {
+    if (!taskTitle || !currentTask) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Task title is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const updatedTask = {
+        title: taskTitle,
+        description: taskDescription || null,
+        status: taskStatus,
+        project_id: taskProject,
+        due_date: taskDueDate ? taskDueDate.toISOString() : null,
+        updated_at: new Date().toISOString(),
+      };
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update(updatedTask)
+        .eq('id', currentTask.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Task updated successfully!',
+      });
+      
+      resetTaskForm();
+      setOpenTaskDialog(false);
+      fetchTasks();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update task. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleDeleteTask = async () => {
+    if (!currentTask) return;
+    
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', currentTask.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Success',
+        description: 'Task deleted successfully!',
+      });
+      
+      setOpenDeleteTaskDialog(false);
+      fetchTasks();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete task. ' + error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const resetProjectForm = () => {
+    setProjectName('');
+    setProjectDescription('');
+    setProjectStatus('active');
+    setProjectDeadline(undefined);
     setCurrentProject(null);
-    projectForm.reset({
-      name: '',
-      description: '',
-      deadline: ''
-    });
-    setIsProjectDialogOpen(true);
   };
-
-  const openEditProjectDialog = (project: any) => {
+  
+  const resetTaskForm = () => {
+    setTaskTitle('');
+    setTaskDescription('');
+    setTaskStatus('todo');
+    setTaskDueDate(undefined);
+    setTaskProject(undefined);
+    setCurrentTask(null);
+  };
+  
+  const editProject = (project: Project) => {
     setCurrentProject(project);
-    
-    const deadlineValue = project.deadline 
-      ? format(new Date(project.deadline), 'yyyy-MM-dd') 
-      : '';
-    
-    projectForm.reset({
-      name: project.name,
-      description: project.description || '',
-      deadline: deadlineValue
-    });
-    
-    setIsProjectDialogOpen(true);
+    setProjectName(project.name);
+    setProjectDescription(project.description || '');
+    setProjectStatus(project.status);
+    setProjectDeadline(project.deadline ? new Date(project.deadline) : undefined);
+    setOpenDialog(true);
+  };
+  
+  const editTask = (task: Task) => {
+    setCurrentTask(task);
+    setTaskTitle(task.title);
+    setTaskDescription(task.description || '');
+    setTaskStatus(task.status);
+    setTaskDueDate(task.due_date ? new Date(task.due_date) : undefined);
+    setTaskProject(task.project_id);
+    setOpenTaskDialog(true);
+  };
+  
+  const confirmDeleteProject = (project: Project) => {
+    setCurrentProject(project);
+    setOpenDeleteDialog(true);
+  };
+  
+  const confirmDeleteTask = (task: Task) => {
+    setCurrentTask(task);
+    setOpenDeleteTaskDialog(true);
   };
 
-  const openNewTaskDialog = (projectId: string) => {
-    taskForm.reset({
-      title: '',
-      description: '',
-      dueDate: '',
-      projectId
-    });
-    setIsTaskDialogOpen(true);
-  };
-
-  const onProjectSubmit = async (values: any) => {
-    try {
-      const projectData = {
-        user_id: user!.id,
-        name: values.name,
-        description: values.description || null,
-        deadline: values.deadline || null,
-        status: 'active'
-      };
-      
-      let result;
-      if (currentProject) {
-        // Update existing project
-        result = await supabase
-          .from('projects')
-          .update(projectData)
-          .eq('id', currentProject.id);
-          
-        if (result.error) throw result.error;
-        
-        toast({
-          title: "Success",
-          description: "Project updated successfully",
-        });
-      } else {
-        // Create new project
-        result = await supabase
-          .from('projects')
-          .insert([projectData]);
-          
-        if (result.error) throw result.error;
-        
-        toast({
-          title: "Success",
-          description: "Project created successfully",
-        });
-      }
-      
-      setIsProjectDialogOpen(false);
-      fetchProjects();
-    } catch (error: any) {
-      console.error("Error saving project:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save project",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const onTaskSubmit = async (values: any) => {
-    try {
-      const taskData = {
-        project_id: values.projectId,
-        title: values.title,
-        description: values.description || null,
-        due_date: values.dueDate || null,
-        status: 'todo'
-      };
-      
-      const { error } = await supabase
-        .from('tasks')
-        .insert([taskData]);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Task added successfully",
-      });
-      
-      setIsTaskDialogOpen(false);
-      fetchProjects();
-    } catch (error: any) {
-      console.error("Error adding task:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add task",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateTaskStatus = async (taskId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('tasks')
-        .update({ status: newStatus })
-        .eq('id', taskId);
-      
-      if (error) throw error;
-      
-      // Update the local state to reflect the change
-      setProjects(projects.map(project => ({
-        ...project,
-        tasks: project.tasks.map((task: any) => 
-          task.id === taskId ? { ...task, status: newStatus } : task
-        )
-      })));
-      
-      // Also update the selected project if needed
-      if (selectedProject) {
-        setSelectedProject({
-          ...selectedProject,
-          tasks: selectedProject.tasks.map((task: any) => 
-            task.id === taskId ? { ...task, status: newStatus } : task
-          )
-        });
-      }
-      
-      toast({
-        title: "Success",
-        description: "Task status updated",
-      });
-    } catch (error: any) {
-      console.error("Error updating task status:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update task status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getProjectProgress = (tasks: any[]) => {
-    if (!tasks || tasks.length === 0) return 0;
-    
-    const completedTasks = tasks.filter(task => task.status === 'done').length;
-    return Math.round((completedTasks / tasks.length) * 100);
-  };
-
-  const getTaskStatusElement = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'done':
-        return <CheckCircle2 className="text-green-500" size={18} />;
-      case 'in_progress':
-        return <Circle className="text-blue-500" size={18} />;
-      case 'todo':
+      case 'active':
+        return <Badge className="bg-green-500">Active</Badge>;
+      case 'completed':
+        return <Badge className="bg-blue-500">Completed</Badge>;
+      case 'on-hold':
+        return <Badge className="bg-yellow-500">On Hold</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-500">Cancelled</Badge>;
       default:
-        return <Circle className="text-gray-400" size={18} />;
+        return <Badge>{status}</Badge>;
     }
   };
-
-  const getTaskDueDateElement = (dueDate: string | null) => {
-    if (!dueDate) return null;
-    
-    const date = new Date(dueDate);
-    const isPastDue = isPast(date) && !isToday(date);
-    const isToday = format(new Date(), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-    
+  
+  const getTaskStatusBadge = (status: string) => {
+    switch (status) {
+      case 'todo':
+        return <Badge variant="outline" className="border-gray-400 text-gray-700">To Do</Badge>;
+      case 'in-progress':
+        return <Badge className="bg-blue-500">In Progress</Badge>;
+      case 'done':
+        return <Badge className="bg-green-500">Done</Badge>;
+      case 'blocked':
+        return <Badge className="bg-red-500">Blocked</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+  
+  // Function to check if a date is today
+  const isToday = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  };
+  
+  // Group tasks by project
+  const tasksByProject = tasks.reduce<Record<string, Task[]>>((acc, task) => {
+    if (!acc[task.project_id]) {
+      acc[task.project_id] = [];
+    }
+    acc[task.project_id].push(task);
+    return acc;
+  }, {});
+  
+  if (!user) {
     return (
-      <div className={`text-xs flex items-center ${isPastDue ? 'text-red-500' : isToday ? 'text-orange-500' : 'text-gray-500'}`}>
-        <Calendar size={12} className="mr-1" />
-        {format(date, 'MMM d')}
-        {isPastDue && <AlertCircle className="ml-1" size={12} />}
+      <div className="flex items-center justify-center h-[70vh]">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center p-6">
+            <h2 className="text-xl font-bold mb-4">Please Sign In</h2>
+            <p className="mb-4">You need to sign in to manage your projects.</p>
+            <Button onClick={() => navigate('/auth')}>
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
-  };
-
+  }
+  
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="container mx-auto py-6">
       <PageHeader 
-        title="Project Management" 
+        title="Project Management"
         description="Organize your projects with tasks, milestones, and deadlines"
       >
-        <Button onClick={openNewProjectDialog} className="flex items-center gap-2">
-          <Plus size={16} />
-          New Project
-        </Button>
-      </PageHeader>
-
-      {loading ? (
-        <div className="flex justify-center my-8">Loading projects...</div>
-      ) : projects.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6">
-          {/* Project list sidebar */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="py-3">
-                <CardTitle className="text-lg">Your Projects</CardTitle>
-              </CardHeader>
-              <CardContent className="py-0">
-                <ScrollArea className="h-[60vh]">
-                  <div className="space-y-1 pr-3">
-                    {projects.map(project => (
-                      <div 
-                        key={project.id} 
-                        className={`px-3 py-2 rounded-md cursor-pointer ${selectedProject?.id === project.id ? 'bg-gigstr-purple text-white' : 'hover:bg-gray-100'}`}
-                        onClick={() => setSelectedProject(project)}
-                      >
-                        <div className="font-medium">{project.name}</div>
-                        <div className="text-xs flex justify-between mt-1">
-                          <span className={selectedProject?.id === project.id ? 'text-white/80' : 'text-gray-500'}>
-                            {project.tasks.length} {project.tasks.length === 1 ? 'task' : 'tasks'}
-                          </span>
-                          <span className={selectedProject?.id === project.id ? 'text-white/80' : 'text-gray-500'}>
-                            {getProjectProgress(project.tasks)}% done
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Project details */}
-          {selectedProject && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle>{selectedProject.name}</CardTitle>
-                      {selectedProject.description && (
-                        <CardDescription className="mt-2">
-                          {selectedProject.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditProjectDialog(selectedProject)}
-                    >
-                      Edit Project
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium">Progress</span>
-                        <span className="text-sm">
-                          {getProjectProgress(selectedProject.tasks)}%
-                        </span>
-                      </div>
-                      <Progress value={getProjectProgress(selectedProject.tasks)} />
-                    </div>
-                    
-                    {selectedProject.deadline && (
-                      <div className="flex items-center text-sm">
-                        <Calendar size={16} className="mr-2 text-gray-500" />
-                        <span>
-                          {format(new Date(selectedProject.deadline), 'MMMM d, yyyy')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Tasks */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">Tasks</CardTitle>
-                    <Button 
-                      size="sm" 
-                      onClick={() => openNewTaskDialog(selectedProject.id)}
-                    >
-                      <Plus size={14} className="mr-1" />
-                      Add Task
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {selectedProject.tasks.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedProject.tasks.map((task: any) => (
-                        <div
-                          key={task.id}
-                          className="flex items-center p-3 border rounded-md hover:bg-gray-50"
-                        >
-                          <div 
-                            className="cursor-pointer mr-2"
-                            onClick={() => {
-                              const newStatus = task.status === 'todo' 
-                                ? 'in_progress' 
-                                : task.status === 'in_progress' 
-                                ? 'done' 
-                                : 'todo';
-                              updateTaskStatus(task.id, newStatus);
-                            }}
-                          >
-                            {getTaskStatusElement(task.status)}
-                          </div>
-                          
-                          <div className="flex-grow">
-                            <div className={`font-medium ${task.status === 'done' ? 'line-through text-gray-500' : ''}`}>
-                              {task.title}
-                            </div>
-                            {task.description && (
-                              <div className="text-sm text-gray-600 mt-1">
-                                {task.description}
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="ml-4">
-                            {task.due_date && getTaskDueDateElement(task.due_date)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 text-gray-500">
-                      No tasks yet. Add your first task to get started!
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg bg-gray-50">
-          <ClipboardList className="h-12 w-12 text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No Projects Yet</h3>
-          <p className="text-muted-foreground mb-6 max-w-md">
-            You haven't created any projects yet. Start organizing your work by creating your first project.
-          </p>
-          <Button onClick={openNewProjectDialog}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Your First Project
+        <div className="flex gap-2">
+          <Button onClick={() => {
+            resetProjectForm();
+            setOpenDialog(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" /> New Project
+          </Button>
+          <Button variant="outline" onClick={() => {
+            resetTaskForm();
+            setOpenTaskDialog(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" /> New Task
           </Button>
         </div>
-      )}
-
-      {/* Project Form Dialog */}
-      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      </PageHeader>
+      
+      <Tabs defaultValue="projects" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="projects" className="mt-4">
+          {loading ? (
+            <div className="text-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gigstr-purple mx-auto"></div>
+              <p className="mt-4">Loading projects...</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-10">
+              <ClipboardList className="mx-auto h-10 w-10 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium">No projects yet</h3>
+              <p className="text-gray-500">Create your first project to get started.</p>
+              <Button className="mt-4" onClick={() => {
+                resetProjectForm();
+                setOpenDialog(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" /> Create Project
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map(project => (
+                <Card key={project.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{project.name}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {getStatusBadge(project.status)}
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => editProject(project)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => confirmDeleteProject(project)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-500 line-clamp-2">{project.description || 'No description'}</p>
+                    {project.deadline && (
+                      <div className="flex items-center mt-2 text-sm text-gray-500">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        <span>Due: {format(new Date(project.deadline), 'MMM dd, yyyy')}</span>
+                      </div>
+                    )}
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium mb-2">Tasks</h4>
+                      {tasksByProject[project.id] && tasksByProject[project.id].length > 0 ? (
+                        <ul className="space-y-1">
+                          {tasksByProject[project.id].slice(0, 3).map(task => (
+                            <li key={task.id} className="text-sm flex items-center justify-between">
+                              <span className="truncate">{task.title}</span>
+                              {getTaskStatusBadge(task.status)}
+                            </li>
+                          ))}
+                          {tasksByProject[project.id].length > 3 && (
+                            <li className="text-sm text-gray-500">
+                              +{tasksByProject[project.id].length - 3} more tasks
+                            </li>
+                          )}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500">No tasks</p>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setTaskProject(project.id);
+                      resetTaskForm();
+                      setOpenTaskDialog(true);
+                    }}>
+                      Add Task
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="tasks" className="mt-4">
+          {loading ? (
+            <div className="text-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gigstr-purple mx-auto"></div>
+              <p className="mt-4">Loading tasks...</p>
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="text-center py-10">
+              <ClipboardList className="mx-auto h-10 w-10 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium">No tasks yet</h3>
+              <p className="text-gray-500">Create your first task to get started.</p>
+              <Button className="mt-4" onClick={() => {
+                resetTaskForm();
+                setOpenTaskDialog(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" /> Create Task
+              </Button>
+            </div>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tasks.map(task => (
+                    <TableRow key={task.id}>
+                      <TableCell>{task.title}</TableCell>
+                      <TableCell>
+                        {/* @ts-ignore - We know projects exists on the task due to our query */}
+                        {task.projects?.name || 'Unknown project'}
+                      </TableCell>
+                      <TableCell>{getTaskStatusBadge(task.status)}</TableCell>
+                      <TableCell>
+                        {task.due_date ? (
+                          <span className={isToday(task.due_date) ? 'text-orange-500 font-medium' : ''}>
+                            {format(new Date(task.due_date), 'MMM dd, yyyy')}
+                          </span>
+                        ) : (
+                          'No due date'
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => editTask(task)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => confirmDeleteTask(task)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="calendar" className="mt-4">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-medium mb-4">Upcoming Deadlines</h3>
+              {tasks.filter(task => task.due_date).length === 0 && projects.filter(project => project.deadline).length === 0 ? (
+                <div className="text-center py-6">
+                  <Calendar className="mx-auto h-10 w-10 text-gray-400" />
+                  <p className="mt-2 text-gray-500">No upcoming deadlines</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Project deadlines */}
+                  {projects.filter(project => project.deadline).map(project => (
+                    <div key={project.id} className="flex justify-between items-center p-3 rounded-md border">
+                      <div>
+                        <div className="flex items-center">
+                          <Badge className="bg-purple-500 mr-2">Project</Badge>
+                          <h4 className="font-medium">{project.name}</h4>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Due: {project.deadline ? format(new Date(project.deadline), 'MMMM dd, yyyy') : 'No deadline'}
+                        </p>
+                      </div>
+                      {getStatusBadge(project.status)}
+                    </div>
+                  ))}
+                  
+                  {/* Task deadlines */}
+                  {tasks.filter(task => task.due_date).map(task => (
+                    <div key={task.id} className="flex justify-between items-center p-3 rounded-md border">
+                      <div>
+                        <div className="flex items-center">
+                          <Badge className="bg-blue-500 mr-2">Task</Badge>
+                          <h4 className="font-medium">{task.title}</h4>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Due: {task.due_date ? format(new Date(task.due_date), 'MMMM dd, yyyy') : 'No deadline'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {/* @ts-ignore - We know projects exists on the task due to our query */}
+                          Project: {task.projects?.name || 'Unknown project'}
+                        </p>
+                      </div>
+                      {getTaskStatusBadge(task.status)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Project Dialog */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
-              {currentProject ? 'Edit Project' : 'Create New Project'}
-            </DialogTitle>
+            <DialogTitle>{currentProject ? 'Edit Project' : 'Create New Project'}</DialogTitle>
+            <DialogDescription>
+              {currentProject ? 'Update your project details.' : 'Add a new project to your workspace.'}
+            </DialogDescription>
           </DialogHeader>
-          
-          <Form {...projectForm}>
-            <form onSubmit={projectForm.handleSubmit(onProjectSubmit)} className="space-y-6 pt-4">
-              <FormField
-                control={projectForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter project name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="col-span-3"
               />
-              
-              <FormField
-                control={projectForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Project description"
-                        className="resize-none"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                className="col-span-3"
               />
-              
-              <FormField
-                control={projectForm.control}
-                name="deadline"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Deadline (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsProjectDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {currentProject ? 'Update Project' : 'Create Project'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="status" className="text-right">
+                Status
+              </Label>
+              <Select
+                value={projectStatus}
+                onValueChange={setProjectStatus}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="deadline" className="text-right">
+                Deadline
+              </Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {projectDeadline ? format(projectDeadline, "PPP") : "Select deadline"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={projectDeadline}
+                      onSelect={setProjectDeadline}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetProjectForm();
+              setOpenDialog(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={currentProject ? handleUpdateProject : handleCreateProject}>
+              {currentProject ? 'Update Project' : 'Create Project'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Task Form Dialog */}
-      <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+      
+      {/* Task Dialog */}
+      <Dialog open={openTaskDialog} onOpenChange={setOpenTaskDialog}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New Task</DialogTitle>
+            <DialogTitle>{currentTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+            <DialogDescription>
+              {currentTask ? 'Update your task details.' : 'Add a new task to your project.'}
+            </DialogDescription>
           </DialogHeader>
-          
-          <Form {...taskForm}>
-            <form onSubmit={taskForm.handleSubmit(onTaskSubmit)} className="space-y-6 pt-4">
-              <input type="hidden" {...taskForm.register('projectId')} />
-              
-              <FormField
-                control={taskForm.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Task Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter task title" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="title"
+                value={taskTitle}
+                onChange={(e) => setTaskTitle(e.target.value)}
+                className="col-span-3"
               />
-              
-              <FormField
-                control={taskForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Task description"
-                        className="resize-none"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="projectId" className="text-right">
+                Project
+              </Label>
+              <Select
+                value={taskProject}
+                onValueChange={setTaskProject}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(project => (
+                    <SelectItem key={project.id} value={project.id}>{project.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="taskDescription" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="taskDescription"
+                value={taskDescription}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                className="col-span-3"
               />
-              
-              <FormField
-                control={taskForm.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Due Date (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsTaskDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Add Task
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="taskStatus" className="text-right">
+                Status
+              </Label>
+              <Select
+                value={taskStatus}
+                onValueChange={setTaskStatus}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dueDate" className="text-right">
+                Due Date
+              </Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {taskDueDate ? format(taskDueDate, "PPP") : "Select due date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={taskDueDate}
+                      onSelect={setTaskDueDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              resetTaskForm();
+              setOpenTaskDialog(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={currentTask ? handleUpdateTask : handleCreateTask}>
+              {currentTask ? 'Update Task' : 'Create Task'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Project Confirmation */}
+      <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the project "{currentProject?.name}" and all associated tasks.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Delete Task Confirmation */}
+      <AlertDialog open={openDeleteTaskDialog} onOpenChange={setOpenDeleteTaskDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the task "{currentTask?.title}".
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTask} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
