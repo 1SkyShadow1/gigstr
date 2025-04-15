@@ -465,187 +465,190 @@ const Profile = () => {
                       <TabsTrigger value="verification">Verification</TabsTrigger>
                       <TabsTrigger value="certificates">Certificates</TabsTrigger>
                     </TabsList>
-                  </Tabs>
-                </CardHeader>
-                <CardContent>
-                  <TabsContent value="personal" className="mt-0">
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-2 gap-4">
+                    
+                    {/* Move TabsContent components inside the Tabs component */}
+                    <TabsContent value="personal" className="mt-0">
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="firstName" className="mb-2 block">First Name</Label>
+                            <Input 
+                              id="firstName" 
+                              value={firstName} 
+                              onChange={(e) => setFirstName(e.target.value)} 
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="lastName" className="mb-2 block">Last Name</Label>
+                            <Input 
+                              id="lastName" 
+                              value={lastName} 
+                              onChange={(e) => setLastName(e.target.value)} 
+                            />
+                          </div>
+                        </div>
+                        
                         <div>
-                          <Label htmlFor="firstName" className="mb-2 block">First Name</Label>
+                          <Label htmlFor="username" className="mb-2 block">Username</Label>
                           <Input 
-                            id="firstName" 
-                            value={firstName} 
-                            onChange={(e) => setFirstName(e.target.value)} 
+                            id="username" 
+                            value={username} 
+                            onChange={(e) => setUsername(e.target.value)} 
                           />
                         </div>
+                        
                         <div>
-                          <Label htmlFor="lastName" className="mb-2 block">Last Name</Label>
-                          <Input 
-                            id="lastName" 
-                            value={lastName} 
-                            onChange={(e) => setLastName(e.target.value)} 
+                          <Label htmlFor="bio" className="mb-2 block">Bio</Label>
+                          <Textarea 
+                            id="bio" 
+                            value={bio} 
+                            onChange={(e) => setBio(e.target.value)} 
+                            rows={4}
+                            placeholder="Tell others about your skills and expertise..."
                           />
                         </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="username" className="mb-2 block">Username</Label>
-                        <Input 
-                          id="username" 
-                          value={username} 
-                          onChange={(e) => setUsername(e.target.value)} 
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="bio" className="mb-2 block">Bio</Label>
-                        <Textarea 
-                          id="bio" 
-                          value={bio} 
-                          onChange={(e) => setBio(e.target.value)} 
-                          rows={4}
-                          placeholder="Tell others about your skills and expertise..."
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="skills" className="mb-2 block">Skills</Label>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {skills.map((skill, index) => (
-                            <Badge key={index} variant="outline" className="flex items-center gap-1">
-                              {skill}
-                              <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => handleRemoveSkill(skill)}
-                              />
-                            </Badge>
-                          ))}
+                        
+                        <div>
+                          <Label htmlFor="skills" className="mb-2 block">Skills</Label>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {skills.map((skill, index) => (
+                              <Badge key={index} variant="outline" className="flex items-center gap-1">
+                                {skill}
+                                <X 
+                                  className="h-3 w-3 cursor-pointer" 
+                                  onClick={() => handleRemoveSkill(skill)}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Input 
+                              id="skills" 
+                              value={newSkill} 
+                              onChange={(e) => setNewSkill(e.target.value)} 
+                              placeholder="Add a skill"
+                              onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+                            />
+                            <Button 
+                              type="button" 
+                              onClick={handleAddSkill} 
+                              size="icon"
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Input 
-                            id="skills" 
-                            value={newSkill} 
-                            onChange={(e) => setNewSkill(e.target.value)} 
-                            placeholder="Add a skill"
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
-                          />
+                        
+                        <div className="flex justify-end pt-4">
                           <Button 
                             type="button" 
-                            onClick={handleAddSkill} 
-                            size="icon"
+                            onClick={handleUpdateProfile} 
+                            disabled={isUpdating}
                           >
-                            <PlusCircle className="h-4 w-4" />
+                            {isUpdating ? "Saving..." : "Save Changes"}
                           </Button>
                         </div>
                       </div>
-                      
-                      <div className="flex justify-end pt-4">
-                        <Button 
-                          type="button" 
-                          onClick={handleUpdateProfile} 
-                          disabled={isUpdating}
-                        >
-                          {isUpdating ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
 
-                  <TabsContent value="verification" className="mt-0">
-                    <div className="space-y-6">
-                      <div>
-                        <Label className="mb-2 block">ID Verification</Label>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Upload a government-issued ID document for verification. This helps build trust on the platform.
-                          <br />Verification status: {profile?.verification_status || 'Not submitted'}
-                        </p>
-
-                        <div className="border rounded-md p-4 mb-4">
-                          {verificationDocs.length > 0 ? (
-                            <div className="space-y-2">
-                              {verificationDocs.map((doc) => (
-                                <div key={doc.name} className="flex justify-between items-center">
-                                  <span className="text-sm">{doc.name}</span>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleDeleteFile(doc.name, 'verification')}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-center text-muted-foreground">
-                              No verification documents uploaded
-                            </p>
-                          )}
-                        </div>
-
-                        <Label htmlFor="verification" className="mb-2 block">Upload ID Document</Label>
-                        <Input 
-                          id="verification" 
-                          type="file" 
-                          accept="image/*,.pdf" 
-                          onChange={(e) => handleDocUpload(e, 'verification')} 
-                        />
-                        
-                        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-                          <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> Your documents are securely stored and only viewed by our verification team. 
-                            Verification usually takes 1-2 business days.
+                    <TabsContent value="verification" className="mt-0">
+                      <div className="space-y-6">
+                        <div>
+                          <Label className="mb-2 block">ID Verification</Label>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Upload a government-issued ID document for verification. This helps build trust on the platform.
+                            <br />Verification status: {profile?.verification_status || 'Not submitted'}
                           </p>
-                        </div>
-                      </div>
-                    </div>
-                  </TabsContent>
 
-                  <TabsContent value="certificates" className="mt-0">
-                    <div className="space-y-6">
-                      <div>
-                        <Label className="mb-2 block">Professional Certificates</Label>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Upload certificates, qualifications, or licenses relevant to your work. 
-                          These will be displayed on your public profile after verification.
-                        </p>
+                          <div className="border rounded-md p-4 mb-4">
+                            {verificationDocs.length > 0 ? (
+                              <div className="space-y-2">
+                                {verificationDocs.map((doc) => (
+                                  <div key={doc.name} className="flex justify-between items-center">
+                                    <span className="text-sm">{doc.name}</span>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => handleDeleteFile(doc.name, 'verification')}
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-center text-muted-foreground">
+                                No verification documents uploaded
+                              </p>
+                            )}
+                          </div>
 
-                        <div className="border rounded-md p-4 mb-4">
-                          {certificates.length > 0 ? (
-                            <div className="space-y-2">
-                              {certificates.map((cert) => (
-                                <div key={cert.name} className="flex justify-between items-center">
-                                  <span className="text-sm">{cert.name}</span>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleDeleteFile(cert.name, 'certificate')}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-center text-muted-foreground">
-                              No certificates uploaded
+                          <Label htmlFor="verification" className="mb-2 block">Upload ID Document</Label>
+                          <Input 
+                            id="verification" 
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            onChange={(e) => handleDocUpload(e, 'verification')} 
+                          />
+                          
+                          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                            <p className="text-sm text-blue-800">
+                              <strong>Note:</strong> Your documents are securely stored and only viewed by our verification team. 
+                              Verification usually takes 1-2 business days.
                             </p>
-                          )}
+                          </div>
                         </div>
-
-                        <Label htmlFor="certificate" className="mb-2 block">Upload Certificate</Label>
-                        <Input 
-                          id="certificate" 
-                          type="file" 
-                          accept="image/*,.pdf" 
-                          onChange={(e) => handleDocUpload(e, 'certificate')} 
-                        />
                       </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
+
+                    <TabsContent value="certificates" className="mt-0">
+                      <div className="space-y-6">
+                        <div>
+                          <Label className="mb-2 block">Professional Certificates</Label>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Upload certificates, qualifications, or licenses relevant to your work. 
+                            These will be displayed on your public profile after verification.
+                          </p>
+
+                          <div className="border rounded-md p-4 mb-4">
+                            {certificates.length > 0 ? (
+                              <div className="space-y-2">
+                                {certificates.map((cert) => (
+                                  <div key={cert.name} className="flex justify-between items-center">
+                                    <span className="text-sm">{cert.name}</span>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      onClick={() => handleDeleteFile(cert.name, 'certificate')}
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-center text-muted-foreground">
+                                No certificates uploaded
+                              </p>
+                            )}
+                          </div>
+
+                          <Label htmlFor="certificate" className="mb-2 block">Upload Certificate</Label>
+                          <Input 
+                            id="certificate" 
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            onChange={(e) => handleDocUpload(e, 'certificate')} 
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardHeader>
+                <CardContent>
+                  {/* Empty CardContent since we moved the TabsContent components inside the Tabs */}
                 </CardContent>
               </Card>
             ) : (
