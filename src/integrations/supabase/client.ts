@@ -39,38 +39,6 @@ interface CustomDatabase extends Database {
           read?: boolean;
         };
       };
-      notifications: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          message: string;
-          type: string;
-          read: boolean;
-          link?: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          message: string;
-          type: string;
-          read?: boolean;
-          link?: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          message?: string;
-          type?: string;
-          read?: boolean;
-          link?: string;
-          created_at?: string;
-        };
-      };
       profiles: {
         Row: {
           id: string;
@@ -85,7 +53,6 @@ interface CustomDatabase extends Database {
           rating: number | null;
           jobs_completed: number | null;
           points: number | null;
-          verification_status: string | null;
         };
         Insert: {
           id: string;
@@ -100,7 +67,6 @@ interface CustomDatabase extends Database {
           rating?: number | null;
           jobs_completed?: number | null;
           points?: number | null;
-          verification_status?: string | null;
         };
         Update: {
           id?: string;
@@ -115,7 +81,6 @@ interface CustomDatabase extends Database {
           rating?: number | null;
           jobs_completed?: number | null;
           points?: number | null;
-          verification_status?: string | null;
         };
       };
     };
