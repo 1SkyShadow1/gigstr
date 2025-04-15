@@ -25,6 +25,17 @@ import Terms from "./pages/Terms";
 import Rewards from "./pages/Rewards";
 import Tools from "./pages/Tools";
 
+// Tool pages
+import Invoicing from "./pages/tools/Invoicing";
+import TimeTracking from "./pages/tools/TimeTracking";
+import ProjectManagement from "./pages/tools/ProjectManagement";
+import SchedulePlanner from "./pages/tools/SchedulePlanner";
+import Analytics from "./pages/tools/Analytics";
+import Contracts from "./pages/tools/Contracts";
+import Expenses from "./pages/tools/Expenses";
+import Pomodoro from "./pages/tools/Pomodoro";
+import ClientPortal from "./pages/tools/ClientPortal";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -47,6 +58,18 @@ const App = () => (
             <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
             <Route path="/rewards" element={<MainLayout><Rewards /></MainLayout>} />
             <Route path="/tools" element={<MainLayout><Tools /></MainLayout>} />
+            
+            {/* Tool Routes */}
+            <Route path="/tools/invoicing" element={<MainLayout><Invoicing /></MainLayout>} />
+            <Route path="/tools/time-tracking" element={<MainLayout><TimeTracking /></MainLayout>} />
+            <Route path="/tools/project-management" element={<MainLayout><ProjectManagement /></MainLayout>} />
+            <Route path="/tools/schedule-planner" element={<MainLayout><SchedulePlanner /></MainLayout>} />
+            <Route path="/tools/analytics" element={<MainLayout><Analytics /></MainLayout>} />
+            <Route path="/tools/contracts" element={<MainLayout><Contracts /></MainLayout>} />
+            <Route path="/tools/expenses" element={<MainLayout><Expenses /></MainLayout>} />
+            <Route path="/tools/pomodoro" element={<MainLayout><Pomodoro /></MainLayout>} />
+            <Route path="/tools/client-portal" element={<MainLayout><ClientPortal /></MainLayout>} />
+            
             <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/help" element={<MainLayout><Help /></MainLayout>} />
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />
