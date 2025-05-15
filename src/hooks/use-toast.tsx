@@ -3,7 +3,6 @@
 import * as React from "react";
 import {
   type ToastActionElement,
-  type ToastProps,
 } from "@/components/ui/toast";
 
 // Define types
@@ -14,6 +13,7 @@ export type ToasterToast = {
   action?: ToastActionElement;
   variant?: "default" | "destructive";
   duration?: number;
+  open?: boolean;
 };
 
 type ToastState = {
@@ -93,6 +93,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
       const newToast = {
         id,
         ...toast,
+        open: true,
         duration: toast.duration || DEFAULT_TOAST_DURATION,
       };
 
@@ -179,4 +180,14 @@ export const useToast = () => {
     dismiss: context.dismissToast,
     update: context.updateToast,
   };
+};
+
+// Export a standalone toast function for direct usage in components
+export const toast = (props: Omit<ToasterToast, "id">) => {
+  const context = React.useContext(ToastContext);
+  if (!context) {
+    console.error("Toast was called outside of ToastProvider context");
+    return;
+  }
+  context.addToast(props);
 };
