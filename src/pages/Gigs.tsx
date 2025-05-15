@@ -52,42 +52,29 @@ const Gigs = () => {
   const fetchGigs = async () => {
     try {
       setLoading(true);
-      // Modified query to remove the nested join that was causing the error
+      
+      // Improved query that fetches gigs along with their client profiles in a single request
       const { data, error } = await supabase
         .from('gigs')
-        .select('*')
+        .select(`
+          *,
+          client:client_id (
+            id,
+            profiles:profiles (
+              username,
+              first_name,
+              last_name,
+              avatar_url
+            )
+          )
+        `)
         .eq('status', 'open')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Fetch client profiles in a separate query if needed
-      if (data && data.length > 0) {
-        const clientIds = [...new Set(data.map(gig => gig.client_id))];
-        
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', clientIds);
-          
-        if (profilesError) throw profilesError;
-        
-        // Merge the profiles data with gigs
-        const gigsWithClientData = data.map(gig => {
-          const clientProfile = profilesData?.find(profile => profile.id === gig.client_id);
-          return {
-            ...gig,
-            client: {
-              id: gig.client_id,
-              profiles: clientProfile ? [clientProfile] : []
-            }
-          };
-        });
-        
-        setGigs(gigsWithClientData);
-      } else {
-        setGigs(data || []);
-      }
+      console.log('Fetched gigs:', data);
+      setGigs(data || []);
     } catch (error: any) {
       console.error("Gigs fetch error:", error);
       toast({

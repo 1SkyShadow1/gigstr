@@ -36,7 +36,7 @@ const GigDetail = () => {
     try {
       setLoading(true);
       
-      // Fetch gig data
+      // Improved query to fetch gig with client profile data
       const { data: gigData, error: gigError } = await supabase
         .from('gigs')
         .select(`
@@ -50,6 +50,7 @@ const GigDetail = () => {
         .single();
       
       if (gigError) throw gigError;
+      console.log('Fetched gig details:', gigData);
       setGig(gigData);
       
       if (user) {
@@ -70,6 +71,7 @@ const GigDetail = () => {
             .eq('gig_id', id);
           
           if (appsError) throw appsError;
+          console.log('Fetched applications:', appsData);
           setApplications(appsData || []);
         } else {
           // Check if current user has applied
@@ -81,11 +83,13 @@ const GigDetail = () => {
             .maybeSingle();
           
           if (!appError) {
+            console.log('Current user application:', appData);
             setApplication(appData);
           }
         }
       }
     } catch (error: any) {
+      console.error('Error fetching gig details:', error);
       toast({
         title: "Error fetching gig details",
         description: error.message,
