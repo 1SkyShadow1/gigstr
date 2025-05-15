@@ -36,6 +36,10 @@ const GigDetail = () => {
     try {
       setLoading(true);
       
+      if (!id) {
+        throw new Error("Gig ID is missing");
+      }
+      
       // Improved query to fetch gig with client profile data
       const { data: gigData, error: gigError } = await supabase
         .from('gigs')
@@ -49,16 +53,26 @@ const GigDetail = () => {
         .eq('id', id)
         .single();
       
-      if (gigError) throw gigError;
+      if (gigError) {
+        console.error("Error fetching gig:", gigError);
+        throw gigError;
+      }
+      
       console.log('Fetched gig details:', gigData);
+      
+      if (!gigData) {
+        throw new Error("Gig not found");
+      }
+      
       setGig(gigData);
       
       if (user) {
         // Check if current user is the owner
-        setIsOwner(user.id === gigData.client_id);
+        const isUserOwner = user.id === gigData.client_id;
+        setIsOwner(isUserOwner);
         
         // If user is owner, fetch applications
-        if (user.id === gigData.client_id) {
+        if (isUserOwner) {
           const { data: appsData, error: appsError } = await supabase
             .from('applications')
             .select(`
@@ -70,7 +84,11 @@ const GigDetail = () => {
             `)
             .eq('gig_id', id);
           
-          if (appsError) throw appsError;
+          if (appsError) {
+            console.error("Error fetching applications:", appsError);
+            throw appsError;
+          }
+          
           console.log('Fetched applications:', appsData);
           setApplications(appsData || []);
         } else {
@@ -82,7 +100,10 @@ const GigDetail = () => {
             .eq('worker_id', user.id)
             .maybeSingle();
           
-          if (!appError) {
+          if (appError) {
+            console.error("Error checking application:", appError);
+            // Don't throw here as this is not a critical error
+          } else {
             console.log('Current user application:', appData);
             setApplication(appData);
           }
@@ -92,7 +113,7 @@ const GigDetail = () => {
       console.error('Error fetching gig details:', error);
       toast({
         title: "Error fetching gig details",
-        description: error.message,
+        description: error.message || "Failed to load gig details",
         variant: "destructive",
       });
     } finally {
@@ -282,13 +303,13 @@ const GigDetail = () => {
                         <div key={app.id} className="border rounded-lg p-4">
                           <div className="flex items-start gap-4">
                             <Avatar>
-                              {app.worker.profiles[0]?.avatar_url ? (
+                              {app.worker?.profiles?.[0]?.avatar_url ? (
                                 <AvatarImage src={app.worker.profiles[0].avatar_url} />
                               ) : (
                                 <AvatarFallback>
                                   {getInitials(
-                                    app.worker.profiles[0]?.first_name,
-                                    app.worker.profiles[0]?.last_name
+                                    app.worker?.profiles?.[0]?.first_name,
+                                    app.worker?.profiles?.[0]?.last_name
                                   )}
                                 </AvatarFallback>
                               )}
@@ -296,7 +317,7 @@ const GigDetail = () => {
                             <div className="flex-1">
                               <div className="flex justify-between">
                                 <h3 className="font-medium">
-                                  {app.worker.profiles[0]?.first_name} {app.worker.profiles[0]?.last_name}
+                                  {app.worker?.profiles?.[0]?.first_name || 'User'} {app.worker?.profiles?.[0]?.last_name || ''}
                                 </h3>
                                 <span className={`px-2 py-0.5 rounded-full text-xs ${
                                   app.status === 'pending' 
@@ -445,30 +466,36 @@ const GigDetail = () => {
                 <CardTitle>About the Client</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-start gap-4">
-                  <Avatar>
-                    {gig.client.profiles[0]?.avatar_url ? (
-                      <AvatarImage src={gig.client.profiles[0].avatar_url} />
-                    ) : (
-                      <AvatarFallback>
-                        {getInitials(
-                          gig.client.profiles[0]?.first_name,
-                          gig.client.profiles[0]?.last_name
-                        )}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div>
-                    <h3 className="font-medium">
-                      {gig.client.profiles[0]?.first_name} {gig.client.profiles[0]?.last_name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      @{gig.client.profiles[0]?.username || 'username'}
-                    </p>
+                {gig.client && gig.client.profiles && gig.client.profiles[0] ? (
+                  <div className="flex items-start gap-4">
+                    <Avatar>
+                      {gig.client.profiles[0]?.avatar_url ? (
+                        <AvatarImage src={gig.client.profiles[0].avatar_url} />
+                      ) : (
+                        <AvatarFallback>
+                          {getInitials(
+                            gig.client.profiles[0]?.first_name,
+                            gig.client.profiles[0]?.last_name
+                          )}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div>
+                      <h3 className="font-medium">
+                        {gig.client.profiles[0]?.first_name || ''} {gig.client.profiles[0]?.last_name || ''}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        @{gig.client.profiles[0]?.username || 'username'}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-2">
+                    Client information unavailable
+                  </div>
+                )}
                 
-                {gig.client.profiles[0]?.bio && (
+                {gig.client?.profiles?.[0]?.bio && (
                   <div className="mt-4 text-sm">
                     {gig.client.profiles[0].bio}
                   </div>
