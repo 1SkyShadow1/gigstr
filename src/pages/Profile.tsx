@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,9 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, X, Shield, Award, Check, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ChangeEmailDialog from '@/components/ChangeEmailDialog';
+import ReauthenticationModal from '@/components/ReauthenticationModal';
 
 const Profile = () => {
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, updatePassword, isReauthenticationRequired } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -27,7 +28,19 @@ const Profile = () => {
   const [verificationDocs, setVerificationDocs] = useState<any[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
-  const [isOwnProfile, setIsOwnProfile] = useState(true); // Default to own profile view
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  
+  // Password update states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  
+  // Modal states
+  const [showChangeEmail, setShowChangeEmail] = useState(false);
+  const [showReauth, setShowReauth] = useState(false);
+  const [pendingOperation, setPendingOperation] = useState<(() => void) | null>(null);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -263,6 +276,54 @@ const Profile = () => {
     navigate(`/create-gig?worker=${profileId}`);
   };
 
+  const requiresReauthentication = (operation: () => void) => {
+    if (isReauthenticationRequired()) {
+      setPendingOperation(() => operation);
+      setShowReauth(true);
+    } else {
+      operation();
+    }
+  };
+
+  const handleReauthSuccess = () => {
+    if (pendingOperation) {
+      pendingOperation();
+      setPendingOperation(null);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Password mismatch",
+        description: "New password and confirmation do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingPassword(true);
+      await updatePassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Password update error:', error);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -462,11 +523,11 @@ const Profile = () => {
                   <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-4">
                       <TabsTrigger value="personal">Personal Info</TabsTrigger>
+                      <TabsTrigger value="account">Account & Security</TabsTrigger>
                       <TabsTrigger value="verification">Verification</TabsTrigger>
                       <TabsTrigger value="certificates">Certificates</TabsTrigger>
                     </TabsList>
                     
-                    {/* Move TabsContent components inside the Tabs component */}
                     <TabsContent value="personal" className="mt-0">
                       <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
@@ -547,6 +608,73 @@ const Profile = () => {
                           >
                             {isUpdating ? "Saving..." : "Save Changes"}
                           </Button>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="account" className="mt-0">
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-lg font-medium mb-4">Email Address</h3>
+                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{user.email}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {user.email_confirmed_at ? 'Verified' : 'Unverified'}
+                              </p>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => requiresReauthentication(() => setShowChangeEmail(true))}
+                            >
+                              Change Email
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-medium mb-4">Password</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="currentPassword">Current Password</Label>
+                              <Input
+                                id="currentPassword"
+                                type="password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                placeholder="Enter current password"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="newPassword">New Password</Label>
+                              <Input
+                                id="newPassword"
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Enter new password (min 6 characters)"
+                              />
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                              <Input
+                                id="confirmPassword"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Confirm new password"
+                              />
+                            </div>
+                            
+                            <Button 
+                              onClick={handlePasswordUpdate}
+                              disabled={!currentPassword || !newPassword || !confirmPassword || isUpdatingPassword}
+                            >
+                              {isUpdatingPassword ? "Updating..." : "Update Password"}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </TabsContent>
@@ -702,6 +830,22 @@ const Profile = () => {
           </div>
         </div>
       </div>
+      
+      <ChangeEmailDialog 
+        isOpen={showChangeEmail} 
+        onClose={() => setShowChangeEmail(false)} 
+      />
+      
+      <ReauthenticationModal
+        isOpen={showReauth}
+        onClose={() => {
+          setShowReauth(false);
+          setPendingOperation(null);
+        }}
+        onSuccess={handleReauthSuccess}
+        title="Security Check Required"
+        description="Please confirm your password to continue with this secure operation."
+      />
     </div>
   );
 };

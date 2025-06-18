@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,6 +27,7 @@ const signupSchema = z.object({
 const Auth = () => {
   const { signIn, signUp, user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -126,6 +128,16 @@ const Auth = () => {
                   >
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>
+                  
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-gigstr-purple hover:underline"
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
                 </form>
               </Form>
             </TabsContent>
@@ -222,6 +234,11 @@ const Auth = () => {
           <p>Need help? <a href="mailto:support@gigstr.com" className="text-gigstr-purple hover:underline">Contact Support</a></p>
         </div>
       </div>
+      
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)} 
+      />
     </div>
   );
 };

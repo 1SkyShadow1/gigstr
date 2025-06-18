@@ -9,9 +9,16 @@ type AuthContextType = {
   user: User | null;
   profile: any | null;
   isLoading: boolean;
+  reauthenticatedAt: Date | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
   signOut: () => Promise<void>;
+  changeEmail: (newEmail: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  reauthenticate: (password: string) => Promise<boolean>;
+  isReauthenticationRequired: () => boolean;
+  clearReauthentication: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [reauthenticatedAt, setReauthenticatedAt] = useState<Date | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: userData,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
       
@@ -134,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
+      setReauthenticatedAt(null);
       toast({
         title: "Signed out",
         description: "You've been signed out successfully",
@@ -149,6 +159,139 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changeEmail = async (newEmail: string, password: string) => {
+    try {
+      setIsLoading(true);
+      
+      // First verify the current password
+      if (!user?.email) throw new Error('No current user found');
+      
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password,
+      });
+      
+      if (signInError) throw new Error('Current password is incorrect');
+      
+      // Now update the email
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email change initiated",
+        description: "Please check both your old and new email addresses to confirm the change",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error changing email",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?tab=reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for instructions to reset your password",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error sending reset email",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updatePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      setIsLoading(true);
+      
+      // First verify the current password
+      if (!user?.email) throw new Error('No current user found');
+      
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      
+      if (signInError) throw new Error('Current password is incorrect');
+      
+      // Now update the password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully updated",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating password",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const reauthenticate = async (password: string): Promise<boolean> => {
+    try {
+      if (!user?.email) throw new Error('No current user found');
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password,
+      });
+      
+      if (error) throw error;
+      
+      setReauthenticatedAt(new Date());
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Authentication failed",
+        description: "The password you entered is incorrect",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const isReauthenticationRequired = (): boolean => {
+    if (!reauthenticatedAt) return true;
+    
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    return reauthenticatedAt < tenMinutesAgo;
+  };
+
+  const clearReauthentication = () => {
+    setReauthenticatedAt(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -156,9 +299,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         profile,
         isLoading,
+        reauthenticatedAt,
         signIn,
         signUp,
         signOut,
+        changeEmail,
+        resetPassword,
+        updatePassword,
+        reauthenticate,
+        isReauthenticationRequired,
+        clearReauthentication,
       }}
     >
       {children}
