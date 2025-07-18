@@ -35,7 +35,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon: Icon, pat
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardFooter>
-        <Button variant="glow" className="w-full justify-between transition-colors">
+        <Button variant="glow" className="w-full justify-between transition-colors" onClick={() => navigate(path)}>
           Open Tool
           <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>

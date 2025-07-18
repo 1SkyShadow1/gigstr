@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import React, { useState, useEffect } from "react";
 
 import MainLayout from "./layouts/MainLayout";
 import Index from "./pages/Index";
@@ -36,6 +37,22 @@ import Analytics from "./pages/tools/Analytics";
 
 const queryClient = new QueryClient();
 
+function IndexRouteWrapper() {
+  const [showLoader, setShowLoader] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoader(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showLoader) {
+    return <Index forceLoader />;
+  }
+  return <MainLayout><Index /></MainLayout>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -43,7 +60,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<MainLayout><Index /></MainLayout>} />
+            <Route path="/" element={<IndexRouteWrapper />} />
             <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
             <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
             <Route path="/gigs" element={<MainLayout><Gigs /></MainLayout>} />

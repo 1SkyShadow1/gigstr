@@ -10,7 +10,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const Index = () => {
+interface IndexProps {
+  forceLoader?: boolean;
+}
+
+const Index: React.FC<IndexProps> = ({ forceLoader }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showLoader, setShowLoader] = useState(false);
@@ -30,13 +34,18 @@ const Index = () => {
     }
   }, [user]);
 
-  if (showLoader && !loaderDone) {
+  if ((showLoader && !loaderDone) || forceLoader) {
     return (
       <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-screen min-w-full bg-[var(--color-bg)]"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-screen min-w-full animate-glow"
+        style={{
+          background: 'radial-gradient(ellipse at 60% 40%, rgba(60, 0, 90, 0.98) 0%, rgba(80, 0, 120, 0.92) 60%, rgba(162, 89, 217, 0.7) 100%)',
+          boxShadow: '0 0 120px 40px #6d28d9, 0 0 240px 80px #a259d9',
+          filter: 'blur(0px) saturate(1.2) brightness(0.85)',
+        }}
       >
-        <h1 className="text-6xl font-extrabold text-white drop-shadow-lg mb-4 tracking-tight animate-fade-in">Welcome to Gigstr</h1>
-        <p className="text-2xl md:text-3xl font-semibold text-white/90 mb-12 animate-fade-in-slow tracking-wide">Where talent meets opportunity</p>
+        <h1 className="text-[clamp(3rem,8vw,6rem)] font-black text-white drop-shadow-[0_0_32px_#a259d9] mb-6 tracking-tight animate-fade-in" style={{textShadow: '0 0 32px #a259d9, 0 0 8px #fff'}}>Welcome to Gigstr</h1>
+        <p className="text-[clamp(2rem,4vw,3.5rem)] font-bold text-white/95 mb-16 animate-fade-in-slow tracking-wide" style={{textShadow: '0 0 16px #6d28d9, 0 0 4px #fff'}}>Where talent meets opportunity</p>
         <div className="loader-con mb-8 scale-150 md:scale-200">
           <div style={{ '--i': 0 } as React.CSSProperties} className="pfile"></div>
           <div style={{ '--i': 1 } as React.CSSProperties} className="pfile"></div>
