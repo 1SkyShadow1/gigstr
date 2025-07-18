@@ -52,28 +52,13 @@ const Gigs = () => {
   const fetchGigs = async () => {
     try {
       setLoading(true);
-      
-      // Improved query that fetches gigs along with their client profiles in a single request
+      // Fetch gigs with a flat select
       const { data, error } = await supabase
         .from('gigs')
-        .select(`
-          *,
-          client:client_id (
-            id,
-            profiles:profiles (
-              username,
-              first_name,
-              last_name,
-              avatar_url
-            )
-          )
-        `)
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
-      
       if (error) throw error;
-      
-      console.log('Fetched gigs:', data);
       setGigs(data || []);
     } catch (error: any) {
       console.error("Gigs fetch error:", error);
@@ -113,7 +98,7 @@ const Gigs = () => {
   const filteredGigs = handleSearch();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)]">
       <div className="container-custom py-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
@@ -124,7 +109,7 @@ const Gigs = () => {
         </div>
         
         {/* Search & Filter */}
-        <div className="bg-white shadow-sm border rounded-lg p-4 mb-8">
+        <div className="bg-white dark:bg-glass shadow-sm border rounded-lg p-4 mb-8 hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -159,7 +144,7 @@ const Gigs = () => {
         ) : filteredGigs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGigs.map(gig => (
-              <Card key={gig.id} className="hover:shadow-md transition-shadow">
+              <Card key={gig.id} className="hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>

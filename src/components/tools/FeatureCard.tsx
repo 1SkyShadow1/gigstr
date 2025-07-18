@@ -22,7 +22,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   onClick
 }) => {
   return (
-    <Card className="bg-gradient-to-r from-gigstr-purple/10 to-gigstr-blue/5 border-gigstr-purple/20 mb-8">
+    <Card className="bg-glass border-gigstr-purple/20 mb-8 shadow-glass backdrop-blur-md">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -31,7 +31,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
               {description}
             </CardDescription>
           </div>
-          <div className="bg-white p-3 rounded-lg shadow-sm">
+          <div className="bg-white p-3 rounded-lg shadow-glow">
             <Icon className="h-8 w-8 text-gigstr-purple" />
           </div>
         </div>
@@ -39,7 +39,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {features.map((feature, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg shadow-sm">
+            <div key={index} className="bg-white p-4 rounded-lg shadow-glass">
               <h3 className="font-medium mb-1">{feature.title}</h3>
               <p className="text-sm text-gray-600">{feature.description}</p>
             </div>
@@ -47,7 +47,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full sm:w-auto" onClick={onClick}>
+        <Button variant="glow" className="w-full sm:w-auto">
           {buttonText}
         </Button>
       </CardFooter>

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
+import Loader from '@/components/ui/loader';
 
 const categories = [
   "Plumbing",
@@ -120,13 +121,13 @@ const CreateGig = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
+        <Loader />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)] py-12">
       <div className="container-custom max-w-3xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Post a New Gig</h1>

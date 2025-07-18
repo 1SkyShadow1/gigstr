@@ -57,8 +57,8 @@ const TestimonialSection = () => {
       
       <div className="container-custom relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="heading-gradient">What Our Users Say</span>
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 heading-gradient">
+            What Our Users Say
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Join thousands of satisfied freelancers who have boosted their careers with Gigstr
@@ -69,7 +69,7 @@ const TestimonialSection = () => {
           <CarouselContent className="-ml-1">
             {testimonials.map((testimonial, index) => (
               <CarouselItem key={index} className="pl-1 basis-full md:basis-1/2 lg:basis-1/3">
-                <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 relative h-full card-hover backdrop-blur-sm">
+                <div className="bg-glass p-8 rounded-xl shadow-glass border border-gigstr-purple/10 relative h-full card-hover backdrop-blur-sm">
                   <div className="absolute top-6 right-8 text-gray-200">
                     <Quote size={48} />
                   </div>

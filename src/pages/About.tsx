@@ -6,7 +6,7 @@ import { Briefcase, Award, Users, ThumbsUp, MapPin } from 'lucide-react';
 
 const About = () => {
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 dark:bg-[var(--color-card)]">
       {/* Hero Section */}
       <div className="relative bg-gigstr-dark overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gigstr-purple/30 to-gigstr-blue/30 mix-blend-multiply"></div>
@@ -56,25 +56,25 @@ const About = () => {
             
             {/* Stats Section */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-12">
-              <Card className="text-center py-6 border-gigstr-purple/20 hover:shadow-md transition-shadow">
+              <Card className="text-center py-6 border-gigstr-purple/20 hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-4">
                   <p className="text-3xl font-bold text-gigstr-purple mb-2">5,000+</p>
                   <p className="text-sm text-gray-600">Skilled Workers</p>
                 </CardContent>
               </Card>
-              <Card className="text-center py-6 border-gigstr-blue/20 hover:shadow-md transition-shadow">
+              <Card className="text-center py-6 border-gigstr-blue/20 hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-4">
                   <p className="text-3xl font-bold text-gigstr-blue mb-2">12,000+</p>
                   <p className="text-sm text-gray-600">Completed Jobs</p>
                 </CardContent>
               </Card>
-              <Card className="text-center py-6 border-gigstr-indigo/20 hover:shadow-md transition-shadow">
+              <Card className="text-center py-6 border-gigstr-indigo/20 hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-4">
                   <p className="text-3xl font-bold text-gigstr-indigo mb-2">3,500+</p>
                   <p className="text-sm text-gray-600">Active Clients</p>
                 </CardContent>
               </Card>
-              <Card className="text-center py-6 border-gigstr-teal/20 hover:shadow-md transition-shadow">
+              <Card className="text-center py-6 border-gigstr-teal/20 hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-4">
                   <p className="text-3xl font-bold text-gigstr-teal mb-2">9</p>
                   <p className="text-sm text-gray-600">South African Provinces</p>
@@ -175,7 +175,7 @@ const About = () => {
           <div className="mt-20 mb-16">
             <h2 className="text-3xl font-bold mb-12 text-center text-gigstr-purple">Our Values</h2>
             <div className="grid md:grid-cols-3 gap-8">
-              <Card className="border-t-4 border-t-gigstr-purple hover:shadow-md transition-shadow">
+              <Card className="border-t-4 border-t-gigstr-purple hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-6">
                   <div className="flex justify-center mb-4">
                     <div className="bg-gigstr-purple/10 p-3 rounded-full">
@@ -189,7 +189,7 @@ const About = () => {
                 </CardContent>
               </Card>
               
-              <Card className="border-t-4 border-t-gigstr-indigo hover:shadow-md transition-shadow">
+              <Card className="border-t-4 border-t-gigstr-indigo hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-6">
                   <div className="flex justify-center mb-4">
                     <div className="bg-gigstr-indigo/10 p-3 rounded-full">
@@ -203,7 +203,7 @@ const About = () => {
                 </CardContent>
               </Card>
               
-              <Card className="border-t-4 border-t-gigstr-teal hover:shadow-md transition-shadow">
+              <Card className="border-t-4 border-t-gigstr-teal hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                 <CardContent className="pt-6">
                   <div className="flex justify-center mb-4">
                     <div className="bg-gigstr-teal/10 p-3 rounded-full">

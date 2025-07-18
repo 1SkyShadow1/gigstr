@@ -19,10 +19,10 @@ const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon: Icon, pat
   const navigate = useNavigate();
   
   return (
-    <Card className="h-full hover:border-gigstr-purple/40 transition-colors group cursor-pointer" onClick={() => navigate(path)}>
+    <Card className="h-full hover:border-gigstr-purple/60 shadow-glass backdrop-blur-md transition-colors group cursor-pointer bg-glass border-gigstr-purple/30">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="bg-gigstr-purple/10 p-3 rounded-lg group-hover:bg-gigstr-purple/20 transition-colors">
+          <div className="bg-gigstr-purple/10 p-3 rounded-lg group-hover:bg-gigstr-purple/20 transition-colors shadow-glow">
             <Icon className="h-6 w-6 text-gigstr-purple" />
           </div>
           {badge && (
@@ -35,7 +35,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ title, description, icon: Icon, pat
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardFooter>
-        <Button variant="ghost" className="w-full justify-between group-hover:text-gigstr-purple transition-colors">
+        <Button variant="glow" className="w-full justify-between transition-colors">
           Open Tool
           <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>

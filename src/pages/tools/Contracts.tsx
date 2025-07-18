@@ -216,6 +216,18 @@ const Contracts = () => {
         </Button>
       </PageHeader>
 
+      <div className="mb-6">
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded flex items-center justify-between">
+          <div>
+            <span className="font-semibold text-blue-700">Want a more secure, verified agreement?</span>
+            <span className="ml-2 text-blue-700">Try <b>TrustLock</b> for premium protection and dispute resolution.</span>
+          </div>
+          <Button variant="secondary" onClick={() => navigate('/tools/trustlock')}>
+            Start TrustLock Agreement
+          </Button>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center my-8">Loading contracts...</div>
       ) : contracts.length > 0 ? (

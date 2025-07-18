@@ -14,7 +14,7 @@ interface RecentToolCardProps {
 
 const RecentToolCard: React.FC<RecentToolCardProps> = ({ icon: Icon, title, lastUsed, action, onClick }) => {
   return (
-    <Card>
+    <Card className="bg-glass border-gigstr-purple/20 shadow-glass backdrop-blur-md">
       <CardHeader className="pb-2">
         <Icon className="h-5 w-5 text-gigstr-purple mb-2" />
         <CardTitle className="text-base">{title}</CardTitle>
@@ -23,7 +23,7 @@ const RecentToolCard: React.FC<RecentToolCardProps> = ({ icon: Icon, title, last
         {lastUsed}
       </CardContent>
       <CardFooter>
-        <Button variant="ghost" size="sm" className="w-full justify-between text-xs" onClick={onClick}>
+        <Button variant="glow" size="sm" className="w-full justify-between text-xs" onClick={onClick}>
           {action}
           <ChevronRight className="h-4 w-4" />
         </Button>

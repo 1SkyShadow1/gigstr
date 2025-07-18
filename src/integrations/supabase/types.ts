@@ -433,6 +433,93 @@ export type Database = {
         }
         Relationships: []
       }
+      trustlock_disputes: {
+        Row: {
+          id: string;
+          contract_id: string;
+          status: string;
+          resolution_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          contract_id: string;
+          status?: string;
+          resolution_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          contract_id?: string;
+          status?: string;
+          resolution_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      trustlock_dispute_messages: {
+        Row: {
+          id: string;
+          dispute_id: string;
+          sender_id: string;
+          message: string;
+          attachment_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          dispute_id: string;
+          sender_id: string;
+          message: string;
+          attachment_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          dispute_id?: string;
+          sender_id?: string;
+          message?: string;
+          attachment_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      trustlock_verifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          document_type: string;
+          file_path: string;
+          status: string;
+          reviewed_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          document_type: string;
+          file_path: string;
+          status?: string;
+          reviewed_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          document_type?: string;
+          file_path?: string;
+          status?: string;
+          reviewed_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     }
     Views: {
       [_ in never]: never

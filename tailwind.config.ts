@@ -105,9 +105,19 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite'
 			},
+			boxShadow: {
+				'glow': '0 0 16px 4px #a259ff88, 0 0 32px 8px #43e6fc44',
+				'glass': '0 4px 32px 0 #a259ff22',
+			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'hero-pattern': 'linear-gradient(to right bottom, #8B5CF6, #6366F1, #0EA5E9)'
+				'hero-pattern': 'linear-gradient(to right bottom, #8B5CF6, #6366F1, #0EA5E9)',
+				'glass': 'linear-gradient(135deg, rgba(162,89,255,0.12) 0%, rgba(67,230,252,0.08) 100%)',
+			},
+			transitionProperty: {
+				'colors': 'background-color, border-color, color, fill, stroke',
+				'bg': 'background-color',
+				'shadow': 'box-shadow',
 			}
 		}
 	},

@@ -4,7 +4,7 @@ import { Shield, Lock, Clock, FileText, AlertCircle } from 'lucide-react';
 
 const Privacy = () => {
   return (
-    <div className="bg-gray-50 min-h-screen pb-16">
+    <div className="bg-gray-50 dark:bg-[var(--color-card)] min-h-screen pb-16">
       {/* Hero Section */}
       <div className="relative bg-gigstr-dark">
         <div className="absolute inset-0 bg-gradient-to-r from-gigstr-purple/30 to-gigstr-indigo/30 mix-blend-multiply"></div>

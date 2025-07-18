@@ -39,8 +39,8 @@ const HowItWorks = () => {
       
       <div className="container-custom relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="heading-gradient">How It Works</span>
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 heading-gradient">
+            How It Works
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Get started in just a few simple steps and begin earning on your own terms
@@ -53,7 +53,7 @@ const HowItWorks = () => {
           
           <div className="grid md:grid-cols-4 gap-8 relative z-10">
             {steps.map((step, index) => (
-              <div key={index} className="flex flex-col items-center text-center">
+              <div key={index} className="flex flex-col items-center text-center bg-glass p-6 rounded-xl shadow-glass border border-gigstr-purple/10 backdrop-blur-sm">
                 <div className={`h-20 w-20 rounded-full bg-white shadow-md flex items-center justify-center mb-6 bg-gradient-to-br ${step.color} text-white transform transition-transform hover:scale-110 duration-300`}>
                   {step.icon}
                 </div>

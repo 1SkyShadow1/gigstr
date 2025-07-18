@@ -13,12 +13,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const isMobile = useMobileDetect();
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[var(--color-bg)] transition-bg">
       <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       
-      <main className={`flex-1 transition-all duration-300 mt-16 ${!isMobile ? 'lg:pl-[280px]' : ''}`}>
-        <div className="container-custom py-6">
+      <main className="flex-1 transition-all duration-300 mt-16">
+        <div className="container-custom py-6 px-2 sm:px-4 md:px-8 w-full max-w-7xl mx-auto">
           {children}
         </div>
       </main>

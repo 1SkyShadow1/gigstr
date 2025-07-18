@@ -22,13 +22,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { FormProvider } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
@@ -331,7 +331,7 @@ const TimeTracking = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-[1fr,1fr,auto] gap-4 items-end">
             <div>
-              <FormLabel>Project</FormLabel>
+              <label className="block text-sm font-medium mb-1">Project</label>
               <Input 
                 placeholder="Project name"
                 value={currentProject}
@@ -340,7 +340,7 @@ const TimeTracking = () => {
               />
             </div>
             <div>
-              <FormLabel>Description (Optional)</FormLabel>
+              <label className="block text-sm font-medium mb-1">Description (Optional)</label>
               <Input 
                 placeholder="What are you working on?"
                 value={currentDescription}
@@ -481,7 +481,7 @@ const TimeTracking = () => {
             </DialogTitle>
           </DialogHeader>
           
-          <Form {...form}>
+          <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
               <FormField
                 control={form.control}
@@ -554,7 +554,7 @@ const TimeTracking = () => {
                 </Button>
               </DialogFooter>
             </form>
-          </Form>
+          </FormProvider>
         </DialogContent>
       </Dialog>
     </div>

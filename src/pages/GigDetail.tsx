@@ -12,6 +12,15 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DollarSign, MapPin, Calendar, Clock, Calendar as CalendarIcon, User, CheckCircle, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
+
 const GigDetail = () => {
   const { id } = useParams();
   const { user, isLoading } = useAuth();
@@ -40,16 +49,10 @@ const GigDetail = () => {
         throw new Error("Gig ID is missing");
       }
       
-      // Improved query to fetch gig with client profile data
+      // Fetch gig with a flat select
       const { data: gigData, error: gigError } = await supabase
         .from('gigs')
-        .select(`
-          *,
-          client:client_id(
-            id,
-            profiles:profiles(first_name, last_name, username, avatar_url, bio)
-          )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
       
@@ -66,6 +69,7 @@ const GigDetail = () => {
       
       setGig(gigData);
       
+      // Optionally, fetch client profile here if needed
       if (user) {
         // Check if current user is the owner
         const isUserOwner = user.id === gigData.client_id;
@@ -73,23 +77,15 @@ const GigDetail = () => {
         
         // If user is owner, fetch applications
         if (isUserOwner) {
+          // Fetch applications with a flat select
           const { data: appsData, error: appsError } = await supabase
             .from('applications')
-            .select(`
-              *,
-              worker:worker_id(
-                id, 
-                profiles:profiles(first_name, last_name, username, avatar_url, bio)
-              )
-            `)
+            .select('*')
             .eq('gig_id', id);
-          
           if (appsError) {
             console.error("Error fetching applications:", appsError);
             throw appsError;
           }
-          
-          console.log('Fetched applications:', appsData);
           setApplications(appsData || []);
         } else {
           // Check if current user has applied
@@ -230,7 +226,7 @@ const GigDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)]">
       <div className="container-custom py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
@@ -258,9 +254,9 @@ const GigDetail = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <div className="text-muted-foreground flex items-center">
-                    <DollarSign className="h-4 w-4 mr-1" /> Price
+                    <span className="font-bold text-lg mr-1">R</span> Price
                   </div>
-                  <div className="font-semibold">${gig.price}</div>
+                  <div className="font-semibold">{formatPrice(gig.price)}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground flex items-center">

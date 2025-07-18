@@ -4,7 +4,7 @@ import { FileText, Bookmark, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const Terms = () => {
   return (
-    <div className="bg-gray-50 min-h-screen pb-16">
+    <div className="bg-gray-50 dark:bg-[var(--color-card)] min-h-screen pb-16">
       {/* Hero Section */}
       <div className="relative bg-gigstr-dark">
         <div className="absolute inset-0 bg-gradient-to-r from-gigstr-indigo/30 to-gigstr-blue/30 mix-blend-multiply"></div>

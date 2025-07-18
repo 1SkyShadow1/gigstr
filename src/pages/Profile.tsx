@@ -14,6 +14,7 @@ import { PlusCircle, X, Shield, Award, Check, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChangeEmailDialog from '@/components/ChangeEmailDialog';
 import ReauthenticationModal from '@/components/ReauthenticationModal';
+import Loader from '@/components/ui/loader';
 
 const Profile = () => {
   const { user, profile, isLoading, updatePassword, isReauthenticationRequired } = useAuth();
@@ -327,7 +328,7 @@ const Profile = () => {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
+        <Loader />
       </div>
     );
   }
@@ -361,6 +362,19 @@ const Profile = () => {
     return null;
   };
 
+  const getTrustLockBadge = () => {
+    if (!profile) return null;
+    if (profile.verification_status === 'verified') {
+      return (
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1 ml-2">
+          <Shield className="h-3 w-3" />
+          TrustLock Verified
+        </Badge>
+      );
+    }
+    return null;
+  };
+
   const renderStars = (rating: number = 0) => {
     return (
       <div className="flex">
@@ -376,7 +390,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)] py-12">
       <div className="container-custom max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">
@@ -393,7 +407,7 @@ const Profile = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
+            <Card className="dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
               <CardHeader>
                 <CardTitle>Profile Picture</CardTitle>
                 <CardDescription>
@@ -451,10 +465,22 @@ const Profile = () => {
                     </>
                   )}
                 </div>
+                {profile && profile.verification_status !== 'verified' && (
+                  <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      <span className="font-semibold text-blue-700">Get TrustLock Verified</span>
+                    </div>
+                    <p className="text-blue-700 text-sm mb-2">Verify your identity and credentials to earn the TrustLock badge and unlock premium features.</p>
+                    <Button variant="secondary" size="sm" onClick={() => setActiveTab('verification')}>
+                      Start Verification
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
-            <Card className="mt-6">
+            <Card className="mt-6 dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
               <CardHeader>
                 <CardTitle>Account Info</CardTitle>
                 <CardDescription>Your account details</CardDescription>
@@ -518,7 +544,7 @@ const Profile = () => {
           {/* Main content */}
           <div className="lg:col-span-2">
             {isOwnProfile ? (
-              <Card>
+              <Card className="dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
                 <CardHeader className="pb-3">
                   <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-4">
@@ -781,7 +807,7 @@ const Profile = () => {
               </Card>
             ) : (
               // View-only profile for other users
-              <Card>
+              <Card className="dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
                 <CardHeader>
                   <CardTitle>About {firstName}</CardTitle>
                   <CardDescription>

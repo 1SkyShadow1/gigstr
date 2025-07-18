@@ -11,7 +11,8 @@ import {
   BarChart3, 
   PenLine,
   Receipt,
-  Timer
+  Timer,
+  Shield
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import PageHeader from '@/components/PageHeader';
@@ -89,6 +90,14 @@ const Tools = () => {
               icon={PenLine}
               path="/tools/contracts"
               badge="New"
+            />
+
+            <ToolCard
+              title="TrustLock Agreement"
+              description="Create secure, verified agreements and resolve disputes with confidence."
+              icon={Shield}
+              path="/tools/trustlock"
+              badge="Premium"
             />
           </div>
         </TabsContent>

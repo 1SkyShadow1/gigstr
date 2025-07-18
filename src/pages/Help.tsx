@@ -8,7 +8,7 @@ import { Search, Mail, Phone, Clock, HelpCircle, FileText, BookOpen, MessageCirc
 
 const Help = () => {
   return (
-    <div className="bg-gray-50 min-h-screen pb-16">
+    <div className="bg-gray-50 dark:bg-[var(--color-card)] min-h-screen pb-16">
       {/* Hero Section */}
       <div className="relative bg-gigstr-dark">
         <div className="absolute inset-0 bg-gradient-to-r from-gigstr-purple/20 to-gigstr-blue/20 mix-blend-multiply"></div>
@@ -43,7 +43,7 @@ const Help = () => {
           <h2 className="text-2xl font-semibold mb-8 text-center">Popular Help Categories</h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-purple cursor-pointer">
+            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-purple cursor-pointer dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
               <CardContent className="pt-6">
                 <div className="bg-gigstr-purple/10 p-4 rounded-full mx-auto mb-4 w-fit">
                   <HelpCircle className="h-6 w-6 text-gigstr-purple" />
@@ -52,7 +52,7 @@ const Help = () => {
               </CardContent>
             </Card>
             
-            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-blue cursor-pointer">
+            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-blue cursor-pointer dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
               <CardContent className="pt-6">
                 <div className="bg-gigstr-blue/10 p-4 rounded-full mx-auto mb-4 w-fit">
                   <FileText className="h-6 w-6 text-gigstr-blue" />
@@ -61,7 +61,7 @@ const Help = () => {
               </CardContent>
             </Card>
             
-            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-indigo cursor-pointer">
+            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-indigo cursor-pointer dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
               <CardContent className="pt-6">
                 <div className="bg-gigstr-indigo/10 p-4 rounded-full mx-auto mb-4 w-fit">
                   <BookOpen className="h-6 w-6 text-gigstr-indigo" />
@@ -70,7 +70,7 @@ const Help = () => {
               </CardContent>
             </Card>
             
-            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-teal cursor-pointer">
+            <Card className="text-center hover:shadow-md transition-all hover:border-gigstr-teal cursor-pointer dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
               <CardContent className="pt-6">
                 <div className="bg-gigstr-teal/10 p-4 rounded-full mx-auto mb-4 w-fit">
                   <MessageCircle className="h-6 w-6 text-gigstr-teal" />

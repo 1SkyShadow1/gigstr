@@ -45,8 +45,8 @@ const FeatureSection = () => {
       
       <div className="container-custom relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            <span className="heading-gradient">Features</span> You'll Love
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 heading-gradient">
+            Features You'll Love
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Everything you need to succeed in the gig economy, all in one platform
@@ -57,8 +57,7 @@ const FeatureSection = () => {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover backdrop-blur-sm"
-            >
+              className="bg-glass p-6 rounded-xl shadow-glass border border-gigstr-purple/10 card-hover backdrop-blur-sm">
               <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center text-gigstr-purple mb-4">
                 {feature.icon}
               </div>

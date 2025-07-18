@@ -139,3 +139,33 @@
   animation: float 6s ease-in-out infinite;
 }
 
+:root {
+  --color-bg: #f8f9fb;
+  --color-bg-glass: rgba(255,255,255,0.7);
+  --color-text: #1a1a2e;
+  --color-primary: #a259ff;
+  --color-primary-glow: 0 0 16px #a259ff88, 0 0 32px #a259ff44;
+  --color-accent: #43e6fc;
+  --color-card: #fff;
+  --color-border: #e0e0e0;
+  --color-input-bg: #f3f4f6;
+  --color-input-text: #1a1a2e;
+  --color-muted-bg: #f3f4f6;
+  --color-muted-text: #888;
+}
+
+[data-theme="dark"] {
+  --color-bg: #18122b;
+  --color-bg-glass: rgba(24,18,43,0.7);
+  --color-text: #f8f9fb;
+  --color-primary: #a259ff;
+  --color-primary-glow: 0 0 16px #a259ffcc, 0 0 32px #a259ff88;
+  --color-accent: #43e6fc;
+  --color-card: #231942;
+  --color-border: #2d2a4a;
+  --color-input-bg: #231942;
+  --color-input-text: #f8f9fb;
+  --color-muted-bg: #2d2a4a;
+  --color-muted-text: #b3b3c6;
+}
+

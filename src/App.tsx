@@ -31,6 +31,8 @@ import TimeTracking from "./pages/tools/TimeTracking";
 import ProjectManagement from "./pages/tools/ProjectManagement";
 import SchedulePlanner from "./pages/tools/SchedulePlanner";
 import Contracts from "./pages/tools/Contracts";
+import TrustLock from "./pages/tools/TrustLock";
+import Analytics from "./pages/tools/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,8 @@ const App = () => (
             <Route path="/tools/project-management" element={<MainLayout><ProjectManagement /></MainLayout>} />
             <Route path="/tools/schedule-planner" element={<MainLayout><SchedulePlanner /></MainLayout>} />
             <Route path="/tools/contracts" element={<MainLayout><Contracts /></MainLayout>} />
+            <Route path="/tools/trustlock" element={<MainLayout><TrustLock /></MainLayout>} />
+            <Route path="/tools/analytics" element={<MainLayout><Analytics /></MainLayout>} />
             
             <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/help" element={<MainLayout><Help /></MainLayout>} />

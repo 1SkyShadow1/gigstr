@@ -9,6 +9,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, DollarSign, MapPin, Briefcase, ArrowRight, Award, Star } from 'lucide-react';
+import Loader from '@/components/ui/loader';
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price);
+};
 
 const Dashboard = () => {
   const { user, profile, isLoading, signOut } = useAuth();
@@ -75,7 +85,7 @@ const Dashboard = () => {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
+        <Loader />
       </div>
     );
   }
@@ -88,10 +98,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)]">
       <div className="container-custom py-8">
         {/* Profile Summary */}
-        <div className="bg-gradient-to-r from-gigstr-purple to-gigstr-indigo text-white rounded-xl p-6 mb-8 shadow-md">
+        <div className="bg-gradient-to-r from-gigstr-purple to-gigstr-indigo text-white rounded-xl p-6 mb-8 shadow-md dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow transition-shadow">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <Avatar className="h-20 w-20 border-4 border-white/20">
               {profile?.avatar_url ? (
@@ -205,8 +215,7 @@ const Dashboard = () => {
                           <div className="font-medium">{gig.title}</div>
                           <div className="flex items-center text-sm text-muted-foreground gap-3 mt-1">
                             <span className="flex items-center">
-                              <DollarSign className="h-3.5 w-3.5 mr-1" />
-                              ${gig.price}
+                              <span className="font-bold text-lg mr-1">R</span>{formatPrice(gig.price)}
                             </span>
                             <span className="flex items-center">
                               <MapPin className="h-3.5 w-3.5 mr-1" />
@@ -260,8 +269,7 @@ const Dashboard = () => {
                           <div className="font-medium">{app.gigs.title}</div>
                           <div className="flex items-center text-sm text-muted-foreground gap-3 mt-1">
                             <span className="flex items-center">
-                              <DollarSign className="h-3.5 w-3.5 mr-1" />
-                              ${app.gigs.price}
+                              <span className="font-bold text-lg mr-1">R</span>{formatPrice(app.gigs.price)}
                             </span>
                             <span className="flex items-center bg-yellow-100 text-yellow-800 rounded px-2 py-0.5 text-xs">
                               {app.status}
@@ -312,7 +320,7 @@ const Dashboard = () => {
               {myGigs.length > 0 ? (
                 <div className="grid gap-4">
                   {myGigs.map(gig => (
-                    <Card key={gig.id} className="hover:shadow-md transition-shadow">
+                    <Card key={gig.id} className="hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                       <CardHeader>
                         <div className="flex justify-between">
                           <CardTitle>{gig.title}</CardTitle>
@@ -332,8 +340,7 @@ const Dashboard = () => {
                       <CardContent>
                         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-4">
                           <span className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1 text-gigstr-purple" />
-                            ${gig.price}
+                            <span className="font-bold text-lg mr-1">R</span>{formatPrice(gig.price)}
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-4 w-4 mr-1 text-gigstr-purple" />
@@ -374,7 +381,7 @@ const Dashboard = () => {
               {myApplications.length > 0 ? (
                 <div className="grid gap-4">
                   {myApplications.map(app => (
-                    <Card key={app.id} className="hover:shadow-md transition-shadow">
+                    <Card key={app.id} className="hover:shadow-md transition-shadow dark:bg-glass hover:shadow-glow focus:shadow-glow active:shadow-glow">
                       <CardHeader>
                         <div className="flex justify-between">
                           <CardTitle>{app.gigs.title}</CardTitle>
@@ -398,8 +405,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                           <span className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1 text-gigstr-purple" />
-                            ${app.gigs.price}
+                            <span className="font-bold text-lg mr-1">R</span>{formatPrice(app.gigs.price)}
                           </span>
                           <span className="flex items-center">
                             <MapPin className="h-4 w-4 mr-1 text-gigstr-purple" />

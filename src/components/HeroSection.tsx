@@ -8,7 +8,7 @@ const HeroSection = () => {
   const navigate = useNavigate();
   
   return (
-    <section className="relative bg-gradient-to-br from-white to-purple-50 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-white to-purple-50 dark:from-[#18122b] dark:to-gigstr-purple/10 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10 z-0">
         <div className="absolute top-0 left-0 right-0 h-full bg-[url('https://images.unsplash.com/photo-1636633762833-5d1658f1e29b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-cover bg-center"></div>
@@ -17,31 +17,32 @@ const HeroSection = () => {
       <div className="container-custom relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              <span className="heading-gradient">Find Workers</span> When You Need Them
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight heading-gradient">
+              Find Workers When You Need Them
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-300">
               Connect with skilled plumbers, electricians, domestic workers and more in South Africa. Get your problems fixed fast.
             </p>
             
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700">Verified local workers you can trust</span>
+                <span className="text-gray-700 dark:text-gray-200">Verified local workers you can trust</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700">Same-day service for emergencies</span>
+                <span className="text-gray-700 dark:text-gray-200">Same-day service for emergencies</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700">Affordable rates with no hidden fees</span>
+                <span className="text-gray-700 dark:text-gray-200">Affordable rates with no hidden fees</span>
               </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button 
-                className="btn-primary text-lg h-12 px-8 shadow-xl hover:shadow-gigstr-purple/20"
+                variant="glow"
+                className="text-lg h-12 px-8"
                 onClick={() => navigate('/gigs')}
               >
                 Find Workers Now
@@ -59,7 +60,7 @@ const HeroSection = () => {
           
           <div className="relative">
             <div className="absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-gradient-to-r from-gigstr-purple/30 to-gigstr-blue/30 rounded-full blur-3xl"></div>
-            <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 animate-float">
+            <div className="bg-glass p-6 rounded-2xl shadow-glass border border-gigstr-purple/20 animate-float backdrop-blur-md">
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-12 w-12 rounded-full bg-gradient-to-r from-gigstr-purple to-gigstr-blue flex items-center justify-center text-white font-bold text-lg">SM</div>
                 <div>

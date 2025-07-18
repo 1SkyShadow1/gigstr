@@ -36,6 +36,15 @@ import { FileText, Plus, Edit, Trash2, Eye, Download, Send } from 'lucide-react'
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
+const formatPrice = (amount: number) => {
+  return new Intl.NumberFormat('en-ZA', {
+    style: 'currency',
+    currency: 'ZAR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
+
 const Invoicing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -245,7 +254,7 @@ const Invoicing = () => {
                   <TableCell className="hidden md:table-cell">
                     {format(new Date(invoice.due_date), 'MMM d, yyyy')}
                   </TableCell>
-                  <TableCell className="text-right">${invoice.amount.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{formatPrice(invoice.amount)}</TableCell>
                   <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -356,7 +365,7 @@ const Invoicing = () => {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount ($)</FormLabel>
+                      <FormLabel>Amount (R)</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
                       </FormControl>
