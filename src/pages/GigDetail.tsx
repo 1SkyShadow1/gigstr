@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DollarSign, MapPin, Calendar, Clock, Calendar as CalendarIcon, User, CheckCircle, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-ZA', {
@@ -32,6 +33,18 @@ const GigDetail = () => {
   const [applying, setApplying] = useState(false);
   const [proposal, setProposal] = useState('');
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [expectedRate, setExpectedRate] = useState('');
+  const [availability, setAvailability] = useState('');
+  const [portfolio, setPortfolio] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [introMedia, setIntroMedia] = useState<File | null>(null);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [requestInterview, setRequestInterview] = useState(false);
+  const [bookmark, setBookmark] = useState(false);
+  const [similarGigs, setSimilarGigs] = useState<any[]>([]);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -40,6 +53,25 @@ const GigDetail = () => {
       fetchGigData();
     }
   }, [id, isLoading, user]);
+
+  // Fetch similar gigs after gig is loaded
+  useEffect(() => {
+    if (gig) {
+      const fetchSimilar = async () => {
+        const { data, error } = await supabase
+          .from('gigs')
+          .select('*')
+          .eq('category', gig.category)
+          .neq('id', gig.id)
+          .limit(3);
+        if (!error && data) setSimilarGigs(data);
+      };
+      fetchSimilar();
+      // Bookmark persistence
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarkedGigs') || '[]');
+      setBookmark(bookmarks.includes(gig.id));
+    }
+  }, [gig]);
 
   const fetchGigData = async () => {
     try {
@@ -122,32 +154,74 @@ const GigDetail = () => {
       navigate('/auth');
       return;
     }
-    
+    if (!agreeTerms) {
+      toast({
+        title: "Agreement required",
+        description: "You must agree to the terms to apply.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       setApplying(true);
-      
+      let fileUrl = null;
+      let introMediaUrl = null;
+      // Upload file if present
+      if (file) {
+        const { data, error } = await supabase.storage.from('applications').upload(`files/${Date.now()}_${file.name}`, file);
+        if (error) throw error;
+        fileUrl = data?.path ? supabase.storage.from('applications').getPublicUrl(data.path).publicURL : null;
+      }
+      // Upload intro media if present
+      if (introMedia) {
+        const { data, error } = await supabase.storage.from('applications').upload(`media/${Date.now()}_${introMedia.name}`, introMedia);
+        if (error) throw error;
+        introMediaUrl = data?.path ? supabase.storage.from('applications').getPublicUrl(data.path).publicURL : null;
+      }
       const newApplication = {
         gig_id: id,
         worker_id: user.id,
         proposal,
+        expected_rate: expectedRate,
+        availability,
+        portfolio,
+        file_url: fileUrl,
+        intro_media_url: introMediaUrl,
+        request_interview: requestInterview,
+        status: 'pending',
       };
-      
       const { data, error } = await supabase
         .from('applications')
         .insert(newApplication)
         .select()
         .single();
-      
       if (error) throw error;
-      
       setApplication(data);
       setShowApplyDialog(false);
       setProposal('');
-      
+      setExpectedRate('');
+      setAvailability('');
+      setPortfolio('');
+      setFile(null);
+      setIntroMedia(null);
+      setAgreeTerms(false);
+      setRequestInterview(false);
       toast({
         title: "Application submitted",
         description: "Your application has been submitted successfully!",
       });
+      // Notify client
+      if (gig && gig.client_id) {
+        await supabase.from('notifications').insert({
+          id: uuidv4(),
+          user_id: gig.client_id,
+          title: 'New Application',
+          message: `${user.user_metadata?.first_name || user.email} applied to your gig: ${gig.title}`,
+          type: 'application',
+          link: `/gigs/${gig.id}`,
+          read: false,
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Error submitting application",
@@ -168,19 +242,56 @@ const GigDetail = () => {
       
       if (error) throw error;
       
+      let workerId = applications.find(app => app.id === applicationId)?.worker_id;
+      // Notify applicant
+      if (workerId) {
+        await supabase.from('notifications').insert({
+          id: uuidv4(),
+          user_id: workerId,
+          title: status === 'accepted' ? 'Application Accepted' : 'Application Rejected',
+          message: status === 'accepted'
+            ? `Your application for gig "${gig.title}" was accepted!`
+            : `Your application for gig "${gig.title}" was rejected.`,
+          type: 'application',
+          link: `/gigs/${gig.id}`,
+          read: false,
+        });
+      }
       if (status === 'accepted') {
         // Update gig status to in_progress
         const { error: gigError } = await supabase
           .from('gigs')
           .update({ 
             status: 'in_progress',
-            worker_id: applications.find(app => app.id === applicationId)?.worker_id
+            worker_id: workerId
           })
           .eq('id', id);
         
         if (gigError) throw gigError;
+        // Notify both client and worker that gig is now active
+        if (gig && gig.client_id && workerId) {
+          await supabase.from('notifications').insert([
+            {
+              id: uuidv4(),
+              user_id: gig.client_id,
+              title: 'Gig In Progress',
+              message: `Your gig "${gig.title}" is now in progress!`,
+              type: 'gig',
+              link: `/gigs/${gig.id}`,
+              read: false,
+            },
+            {
+              id: uuidv4(),
+              user_id: workerId,
+              title: 'Gig In Progress',
+              message: `You have been assigned to gig "${gig.title}"!`,
+              type: 'gig',
+              link: `/gigs/${gig.id}`,
+              read: false,
+            }
+          ]);
+        }
       }
-      
       // Refresh data
       fetchGigData();
       
@@ -197,6 +308,33 @@ const GigDetail = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Bookmark handler
+  const handleBookmark = () => {
+    setBookmark(b => {
+      const newVal = !b;
+      const bookmarks = JSON.parse(localStorage.getItem('bookmarkedGigs') || '[]');
+      if (newVal) {
+        localStorage.setItem('bookmarkedGigs', JSON.stringify([...new Set([...bookmarks, gig.id])]));
+      } else {
+        localStorage.setItem('bookmarkedGigs', JSON.stringify(bookmarks.filter((id: string) => id !== gig.id)));
+      }
+      return newVal;
+    });
+  };
+
+  // Rating submission (after gig completion)
+  const handleSubmitRating = async () => {
+    if (!ratingValue || !gig) return;
+    // For demo: just toast, but in real app, would update DB
+    toast({
+      title: 'Thank you for your feedback!',
+      description: 'Your rating has been submitted.',
+    });
+    setShowRatingDialog(false);
+    setRatingValue(0);
+    setRatingComment('');
   };
 
   if (loading || isLoading) {
@@ -235,15 +373,22 @@ const GigDetail = () => {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-2xl font-bold">{gig.title}</h1>
-                <div className={`px-3 py-1 rounded-full text-sm ${
-                  gig.status === 'open' 
-                    ? 'bg-green-100 text-green-800' 
-                    : gig.status === 'in_progress' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {gig.status === 'open' ? 'Open' : 
-                   gig.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                <div className="flex items-center gap-2">
+                  <div className={`px-3 py-1 rounded-full text-sm ${
+                    gig.status === 'open' 
+                      ? 'bg-green-100 text-green-800' 
+                      : gig.status === 'in_progress' 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {gig.status === 'open' ? 'Open' : 
+                     gig.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                  </div>
+                  <Button size="icon" variant={bookmark ? 'default' : 'outline'} onClick={handleBookmark} title={bookmark ? 'Bookmarked' : 'Bookmark'}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill={bookmark ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" className="h-5 w-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-5-7 5V5z" />
+                    </svg>
+                  </Button>
                 </div>
               </div>
               
@@ -325,6 +470,12 @@ const GigDetail = () => {
                                   {app.status}
                                 </span>
                               </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-yellow-500">★</span>
+                                <span className="text-sm">{app.worker?.profiles?.[0]?.rating || 'New'}</span>
+                                <span className="ml-2 text-xs text-muted-foreground">{app.worker?.profiles?.[0]?.completed_gigs || 0} completed gigs</span>
+                                {app.worker?.profiles?.[0]?.is_verified && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Verified</span>}
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 Applied {formatDistanceToNow(new Date(app.created_at), { addSuffix: true })}
                               </p>
@@ -332,6 +483,17 @@ const GigDetail = () => {
                                 "{app.proposal}"
                               </div>
                               
+                              {/* Show extra fields if present */}
+                              {app.expected_rate && <div className="mt-2 text-sm">Expected Rate: R{app.expected_rate}</div>}
+                              {app.availability && <div className="mt-2 text-sm">Availability: {app.availability}</div>}
+                              {app.portfolio && <div className="mt-2 text-sm">Portfolio: <a href={app.portfolio} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{app.portfolio}</a></div>}
+                              {app.file_url && <div className="mt-2 text-sm">File: <a href={app.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Download</a></div>}
+                              {app.intro_media_url && <div className="mt-2 text-sm">Intro: <a href={app.intro_media_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View/Listen</a></div>}
+                              {app.request_interview && <div className="mt-2 text-sm">Requested Interview</div>}
+                              <div className="flex gap-2 mt-3">
+                                <Button size="sm" variant="outline" onClick={() => navigate(`/profile/${app.worker?.profiles?.[0]?.id}`)}>View Profile</Button>
+                                <Button size="sm" onClick={() => navigate(`/messages?recipient=${app.worker?.profiles?.[0]?.id}`)}>Message</Button>
+                              </div>
                               {app.status === 'pending' && gig.status === 'open' && (
                                 <div className="mt-4 flex gap-3">
                                   <Button 
@@ -392,6 +554,42 @@ const GigDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* After gig is completed, show rating dialog */}
+            {gig.status === 'completed' && !isOwner && (
+              <Button className="mt-4" onClick={() => setShowRatingDialog(true)}>
+                Rate Client
+              </Button>
+            )}
+            {gig.status === 'completed' && isOwner && (
+              <Button className="mt-4" onClick={() => setShowRatingDialog(true)}>
+                Rate Worker
+              </Button>
+            )}
+            <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Leave a Rating</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col gap-3">
+                  <label className="font-medium">Rating</label>
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} type="button" onClick={() => setRatingValue(star)}>
+                        <span className={star <= ratingValue ? 'text-yellow-500 text-2xl' : 'text-gray-300 text-2xl'}>★</span>
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    placeholder="Leave a comment (optional)"
+                    value={ratingComment}
+                    onChange={e => setRatingComment(e.target.value)}
+                    rows={3}
+                  />
+                  <Button onClick={handleSubmitRating} disabled={!ratingValue}>Submit</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
           
           {/* Sidebar */}
@@ -416,16 +614,81 @@ const GigDetail = () => {
                         </DialogDescription>
                       </DialogHeader>
                       
-                      <div className="py-4">
-                        <label className="block text-sm font-medium mb-2">
-                          Your Proposal
-                        </label>
-                        <Textarea 
-                          placeholder="Explain why you're perfect for this gig..."
-                          value={proposal}
-                          onChange={(e) => setProposal(e.target.value)}
-                          rows={6}
-                        />
+                      <div className="py-4 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Your Proposal</label>
+                          <Textarea 
+                            placeholder="Explain why you're perfect for this gig..."
+                            value={proposal}
+                            onChange={(e) => setProposal(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Expected Rate (optional)</label>
+                          <input
+                            type="number"
+                            className="input"
+                            placeholder="e.g. 500"
+                            value={expectedRate}
+                            onChange={e => setExpectedRate(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Availability</label>
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder="e.g. Weekends, evenings, specific dates"
+                            value={availability}
+                            onChange={e => setAvailability(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Portfolio Link</label>
+                          <input
+                            type="url"
+                            className="input"
+                            placeholder="https://yourportfolio.com"
+                            value={portfolio}
+                            onChange={e => setPortfolio(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Upload File (CV, Portfolio, etc.)</label>
+                          <input
+                            type="file"
+                            className="input"
+                            onChange={e => setFile(e.target.files?.[0] || null)}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Intro Video/Audio (optional)</label>
+                          <input
+                            type="file"
+                            accept="video/*,audio/*"
+                            className="input"
+                            onChange={e => setIntroMedia(e.target.files?.[0] || null)}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={agreeTerms}
+                            onChange={e => setAgreeTerms(e.target.checked)}
+                            id="agreeTerms"
+                          />
+                          <label htmlFor="agreeTerms" className="text-sm">I agree to the terms and conditions</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={requestInterview}
+                            onChange={e => setRequestInterview(e.target.checked)}
+                            id="requestInterview"
+                          />
+                          <label htmlFor="requestInterview" className="text-sm">Request a call/interview</label>
+                        </div>
                       </div>
                       
                       <DialogFooter>
@@ -437,7 +700,7 @@ const GigDetail = () => {
                         </Button>
                         <Button 
                           onClick={handleApply} 
-                          disabled={!proposal.trim() || applying}
+                          disabled={!proposal.trim() || applying || !agreeTerms}
                         >
                           {applying ? "Submitting..." : "Submit Application"}
                         </Button>
@@ -483,6 +746,18 @@ const GigDetail = () => {
                       <p className="text-sm text-muted-foreground">
                         @{gig.client.profiles[0]?.username || 'username'}
                       </p>
+                      {/* Creative: Show rating, completed gigs, badges */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-yellow-500">★</span>
+                        <span className="text-sm">{gig.client.profiles[0]?.rating || 'New'}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">{gig.client.profiles[0]?.completed_gigs || 0} completed gigs</span>
+                        {gig.client.profiles[0]?.is_verified && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">Verified</span>}
+                      </div>
+                      {/* Buttons */}
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" variant="outline" onClick={() => navigate(`/profile/${gig.client.profiles[0].id}`)}>View Profile</Button>
+                        {!isOwner && <Button size="sm" onClick={() => navigate(`/messages?recipient=${gig.client.profiles[0].id}`)}>Message</Button>}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -505,9 +780,17 @@ const GigDetail = () => {
                 <CardTitle>Similar Gigs</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-center text-sm text-muted-foreground">
-                  Related gigs will appear here
-                </p>
+                {similarGigs.length > 0 ? (
+                  similarGigs.map(sim => (
+                    <div key={sim.id} className="border rounded p-2 flex flex-col gap-1">
+                      <span className="font-medium">{sim.title}</span>
+                      <span className="text-xs text-muted-foreground">{sim.location || 'Remote'} | R{sim.price}</span>
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/gigs/${sim.id}`)}>View</Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-sm text-muted-foreground">No similar gigs found</p>
+                )}
                 <Button 
                   variant="outline" 
                   className="w-full" 

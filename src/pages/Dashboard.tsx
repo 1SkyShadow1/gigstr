@@ -25,6 +25,8 @@ const Dashboard = () => {
   const [myGigs, setMyGigs] = useState<any[]>([]);
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [activeClientGigs, setActiveClientGigs] = useState<any[]>([]);
+  const [activeWorkerGigs, setActiveWorkerGigs] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +40,20 @@ const Dashboard = () => {
     if (user) {
       fetchMyGigs();
       fetchMyApplications();
+      // Fetch active gigs as client
+      supabase
+        .from('gigs')
+        .select('*')
+        .eq('client_id', user.id)
+        .eq('status', 'in_progress')
+        .then(({ data }) => setActiveClientGigs(data || []));
+      // Fetch active gigs as worker
+      supabase
+        .from('gigs')
+        .select('*')
+        .eq('worker_id', user.id)
+        .eq('status', 'in_progress')
+        .then(({ data }) => setActiveWorkerGigs(data || []));
     }
   }, [user]);
 
@@ -159,43 +175,55 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="mb-8">
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center">
-                    <Briefcase className="mr-2 h-5 w-5 text-gigstr-purple" /> 
-                    My Active Gigs
-                  </CardTitle>
+                <CardHeader>
+                  <CardTitle>Active Gigs (Client)</CardTitle>
+                  <CardDescription>Gigs you posted that are currently in progress</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{myGigs.filter(g => g.status === 'open').length}</div>
-                  <p className="text-muted-foreground">Open opportunities you've posted</p>
+                  {activeClientGigs.length > 0 ? (
+                    <div className="space-y-4">
+                      {activeClientGigs.map(gig => (
+                        <div key={gig.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                          <div>
+                            <div className="font-medium">{gig.title}</div>
+                            <div className="text-xs text-muted-foreground">{gig.description}</div>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/messages?recipient=${gig.worker_id}`)}>
+                            Message Worker
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">No active gigs as client</div>
+                  )}
                 </CardContent>
               </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center">
-                    <Award className="mr-2 h-5 w-5 text-gigstr-purple" /> 
-                    Applications Sent
-                  </CardTitle>
+              <Card className="mt-4">
+                <CardHeader>
+                  <CardTitle>Active Gigs (Worker)</CardTitle>
+                  <CardDescription>Gigs you are working on</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{myApplications.length}</div>
-                  <p className="text-muted-foreground">Jobs you've applied for</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center">
-                    <Star className="mr-2 h-5 w-5 text-gigstr-purple" /> 
-                    Rating
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{profile?.rating || '0.0'} / 5</div>
-                  <p className="text-muted-foreground">From {profile?.jobs_completed || 0} completed jobs</p>
+                  {activeWorkerGigs.length > 0 ? (
+                    <div className="space-y-4">
+                      {activeWorkerGigs.map(gig => (
+                        <div key={gig.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
+                          <div>
+                            <div className="font-medium">{gig.title}</div>
+                            <div className="text-xs text-muted-foreground">{gig.description}</div>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => navigate(`/messages?recipient=${gig.client_id}`)}>
+                            Message Client
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">No active gigs as worker</div>
+                  )}
                 </CardContent>
               </Card>
             </div>

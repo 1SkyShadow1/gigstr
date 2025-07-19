@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@
 
 const Profile = () => {
   const { user, profile, isLoading, updatePassword, isReauthenticationRequired } = useAuth();
+  const { id: profileIdParam } = useParams();
+  const [viewedProfile, setViewedProfile] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
@@ -67,17 +69,21 @@ const Profile = () => {
   }, [user, isLoading, navigate]);
 
   useEffect(() => {
-    if (profile) {
-      setAvatarUrl(profile.avatar_url);
-      setFirstName(profile.first_name || '');
-      setLastName(profile.last_name || '');
-      setUsername(profile.username || '');
-      setBio(profile.bio || '');
-      setSkills(profile.skills || []);
-      fetchVerificationDocs();
-      fetchCertificates();
+    // If viewing another user's profile
+    if (profileIdParam && (!profile || profileIdParam !== user?.id)) {
+      const fetchOtherProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', profileIdParam)
+          .single();
+        if (!error && data) setViewedProfile(data);
+      };
+      fetchOtherProfile();
+    } else {
+      setViewedProfile(profile);
     }
-  }, [profile]);
+  }, [profileIdParam, profile, user]);
 
   const fetchVerificationDocs = async () => {
     if (!user) return;
@@ -356,16 +362,16 @@ const Profile = () => {
   };
 
   const getVerificationBadge = () => {
-    if (!profile) return null;
+    if (!viewedProfile) return null;
     
-    if (profile.verification_status === 'verified') {
+    if (viewedProfile.verification_status === 'verified') {
       return (
         <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1 ml-2">
           <Shield className="h-3 w-3" />
           Verified
         </Badge>
       );
-    } else if (profile.verification_status === 'pending') {
+    } else if (viewedProfile.verification_status === 'pending') {
       return (
         <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 flex items-center gap-1 ml-2">
           <Shield className="h-3 w-3" />
@@ -378,8 +384,8 @@ const Profile = () => {
   };
 
   const getTrustLockBadge = () => {
-    if (!profile) return null;
-    if (profile.verification_status === 'verified') {
+    if (!viewedProfile) return null;
+    if (viewedProfile.verification_status === 'verified') {
       return (
         <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1 ml-2">
           <Shield className="h-3 w-3" />
@@ -449,23 +455,23 @@ const Profile = () => {
                 </div>
 
                 <div className="w-full">
-                  {profile?.rating !== undefined && (
+                  {viewedProfile?.rating !== undefined && (
                     <div className="flex justify-center mb-4">
-                      {renderStars(profile.rating)}
+                      {renderStars(viewedProfile.rating)}
                     </div>
                   )}
                   
                   {!isOwnProfile && (
                     <div className="flex gap-2 justify-center mb-4">
                       <Button 
-                        onClick={() => handleContact(profile?.id || '')}
+                        onClick={() => handleContact(viewedProfile?.id || '')}
                         className="flex-1"
                         variant="default"
                       >
                         Message
                       </Button>
                       <Button 
-                        onClick={() => handleHire(profile?.id || '')}
+                        onClick={() => handleHire(viewedProfile?.id || '')}
                         className="flex-1"
                       >
                         Hire
@@ -480,7 +486,7 @@ const Profile = () => {
                     </>
                   )}
                 </div>
-                {profile && profile.verification_status !== 'verified' && (
+                {viewedProfile?.verification_status !== 'verified' && (
                   <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
                     <div className="flex items-center gap-2 mb-2">
                       <Shield className="h-4 w-4 text-blue-600" />
@@ -513,14 +519,14 @@ const Profile = () => {
                     </span>
                   </div>
                   
-                  {profile?.jobs_completed !== undefined && profile?.jobs_completed > 0 && (
+                  {viewedProfile?.jobs_completed !== undefined && viewedProfile?.jobs_completed > 0 && (
                     <div>
                       <span className="text-muted-foreground">Jobs completed:</span>
-                      <span className="block font-medium">{profile.jobs_completed}</span>
+                      <span className="block font-medium">{viewedProfile.jobs_completed}</span>
                     </div>
                   )}
                   
-                  {profile?.jobs_completed !== undefined && profile?.jobs_completed >= 5 && (
+                  {viewedProfile?.jobs_completed !== undefined && viewedProfile?.jobs_completed >= 5 && (
                     <div className="flex flex-wrap gap-2 mt-4">
                       <Badge className="bg-purple-500 hover:bg-purple-600 flex gap-1 items-center">
                         <Award className="h-3 w-3" /> Experienced (5+ Jobs)
@@ -528,7 +534,7 @@ const Profile = () => {
                     </div>
                   )}
                   
-                  {profile?.jobs_completed !== undefined && profile?.jobs_completed >= 20 && (
+                  {viewedProfile?.jobs_completed !== undefined && viewedProfile?.jobs_completed >= 20 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge className="bg-blue-500 hover:bg-blue-600 flex gap-1 items-center">
                         <Award className="h-3 w-3" /> Professional (20+ Jobs)
@@ -536,7 +542,7 @@ const Profile = () => {
                     </div>
                   )}
                   
-                  {profile?.jobs_completed !== undefined && profile?.jobs_completed >= 50 && (
+                  {viewedProfile?.jobs_completed !== undefined && viewedProfile?.jobs_completed >= 50 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge className="bg-amber-500 hover:bg-amber-600 flex gap-1 items-center">
                         <Award className="h-3 w-3" /> Expert (50+ Jobs)
@@ -544,7 +550,7 @@ const Profile = () => {
                     </div>
                   )}
                   
-                  {profile?.verification_status === 'verified' && (
+                  {viewedProfile?.verification_status === 'verified' && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge className="bg-green-500 hover:bg-green-600 flex gap-1 items-center">
                         <Shield className="h-3 w-3" /> ID Verified
@@ -731,7 +737,7 @@ const Profile = () => {
                           <Label className="mb-2 block">ID Verification</Label>
                           <p className="text-sm text-muted-foreground mb-4">
                             Upload a government-issued ID document for verification. This helps build trust on the platform.
-                            <br />Verification status: {profile?.verification_status || 'Not submitted'}
+                            <br />Verification status: {viewedProfile?.verification_status || 'Not submitted'}
                           </p>
 
                           <div className="border rounded-md p-4 mb-4">
@@ -831,7 +837,7 @@ const Profile = () => {
                 <CardHeader>
                   <CardTitle>About {firstName}</CardTitle>
                   <CardDescription>
-                    {profile?.bio || 'No bio provided.'}
+                    {viewedProfile?.bio || 'No bio provided.'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -853,10 +859,10 @@ const Profile = () => {
                     
                     <div>
                       <h3 className="font-medium mb-2">Completed Jobs</h3>
-                      <p>{profile?.jobs_completed || 0} jobs completed</p>
+                      <p>{viewedProfile?.jobs_completed || 0} jobs completed</p>
                     </div>
                     
-                    {profile?.verification_status === 'verified' && (
+                    {viewedProfile?.verification_status === 'verified' && (
                       <div className="bg-green-50 border border-green-200 rounded-md p-3">
                         <div className="flex items-center">
                           <Shield className="h-5 w-5 text-green-600 mr-2" />

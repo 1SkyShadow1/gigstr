@@ -11,6 +11,8 @@ import { Send, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { v4 as uuidv4 } from 'uuid';
 
 const Messages = () => {
   const { user, profile } = useAuth();
@@ -29,6 +31,21 @@ const Messages = () => {
   // Add state for typing indicator
   const [isRecipientTyping, setIsRecipientTyping] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [userSearchInput, setUserSearchInput] = useState('');
+  const [activeGigs, setActiveGigs] = useState<any[]>([]);
+  const [selectedGig, setSelectedGig] = useState<any>(null);
+  // Add error state to component state
+  const [errorLoadingMessages, setErrorLoadingMessages] = useState(false);
+  // Add state for profile modal
+  const [profileModalUser, setProfileModalUser] = useState<any>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  // Move filteredChats to the very top after state declarations
+  const filteredChats = searchQuery 
+    ? chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : chats;
 
   // Extract recipient ID from URL query params
   useEffect(() => {
@@ -59,9 +76,26 @@ const Messages = () => {
       if (error) throw error;
       
       if (data) {
-        // Create a new chat with this recipient
+        // Check if a message already exists between users
+        const { data: existingMessages, error: msgError } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
+          .limit(1);
+        if (msgError) throw msgError;
+        // If no messages exist, send a starter message
+        if (!existingMessages || existingMessages.length === 0) {
+          await supabase.from('messages').insert({
+            sender_id: user.id,
+            receiver_id: recipientId,
+            content: '👋',
+            created_at: new Date().toISOString(),
+            read: false
+          });
+        }
+        // Create a new chat with this recipient (local, for immediate UI update)
         const newChat = {
-          id: chats.length + 1,
+          id: `new-${recipientId}`,
           recipient_id: recipientId,
           name: `${data.first_name || ''} ${data.last_name || ''}`.trim() || 'User',
           avatar: data.avatar_url,
@@ -70,16 +104,41 @@ const Messages = () => {
           unread: 0
         };
         
-        setChats(prevChats => [...prevChats, newChat]);
-        setActiveChat(chats.length); // Set to the new chat
-        
+        setChats(prevChats => {
+          // Avoid duplicates
+          if (prevChats.some(chat => chat.recipient_id === recipientId)) return prevChats;
+          return [...prevChats, newChat];
+        });
+        setActiveChatByRecipient(recipientId);
         // Clear the recipient from URL
         navigate('/messages', { replace: true });
+        // Refetch chats to ensure the new chat persists
+        fetchChats();
       }
     } catch (error: any) {
       console.error('Error fetching recipient profile:', error);
     }
   };
+
+  // Helper to select chat by recipient_id
+  const setActiveChatByRecipient = (recipientId: string) => {
+    setActiveChat(prev => {
+      const idx = chats.findIndex(chat => chat.recipient_id === recipientId);
+      if (idx !== -1) return idx;
+      // If not found, fallback to first chat
+      return 0;
+    });
+  };
+
+  // When chats update, if a recipient param is present, select the correct chat
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const recipientId = params.get('recipient');
+    if (recipientId && chats.length > 0) {
+      const idx = chats.findIndex(chat => chat.recipient_id === recipientId);
+      if (idx !== -1) setActiveChat(idx);
+    }
+  }, [chats, location.search]);
 
   useEffect(() => {
     if (user) {
@@ -104,11 +163,36 @@ const Messages = () => {
     }
   }, [user]);
 
+  // Fix chat loader bug: only call fetchMessages when activeChat is valid and filteredChats[activeChat] exists
   useEffect(() => {
-    if (activeChat !== null && chats[activeChat]) {
-      fetchMessages(chats[activeChat].recipient_id);
+    if (
+      typeof activeChat === 'number' &&
+      activeChat >= 0 &&
+      filteredChats.length > 0 &&
+      filteredChats[activeChat]
+    ) {
+      fetchMessages(filteredChats[activeChat].recipient_id);
+    } else if (filteredChats.length > 0 && (activeChat === null || activeChat < 0 || activeChat >= filteredChats.length)) {
+      setActiveChat(0); // fallback to first chat
     }
-  }, [activeChat, chats]);
+    // Only depend on activeChat and filteredChats.length to avoid infinite loop
+    // eslint-disable-next-line
+  }, [activeChat, filteredChats.length]);
+
+  // Fetch active gigs for the user (as client or worker)
+  useEffect(() => {
+    if (user) {
+      const fetchActiveGigs = async () => {
+        const { data: gigs, error } = await supabase
+          .from('gigs')
+          .select('*')
+          .or(`client_id.eq.${user.id},worker_id.eq.${user.id}`)
+          .eq('status', 'in_progress');
+        if (!error && gigs) setActiveGigs(gigs);
+      };
+      fetchActiveGigs();
+    }
+  }, [user]);
 
   const fetchChats = async () => {
     if (!user) return;
@@ -214,6 +298,7 @@ const Messages = () => {
     
     try {
       setIsLoadingMessages(true);
+      setErrorLoadingMessages(false);
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -242,6 +327,7 @@ const Messages = () => {
       );
       
     } catch (error: any) {
+      setErrorLoadingMessages(true);
       console.error('Error fetching messages:', error);
       toast({
         title: "Error",
@@ -309,6 +395,17 @@ const Messages = () => {
         
       if (error) throw error;
       
+      // Send notification to recipient
+      await supabase.from('notifications').insert({
+        id: uuidv4(),
+        user_id: recipientId,
+        title: `New Message`,
+        message: `${profile?.first_name || user.email}: ${newMessage.trim().slice(0, 50)}`,
+        type: 'message',
+        link: `/messages?recipient=${user.id}`,
+        read: false,
+      });
+      
       // Optimistically add the message to the UI
       setMessages(prev => [...prev, { 
         ...message, 
@@ -359,9 +456,25 @@ const Messages = () => {
     return date.toLocaleDateString();
   };
 
-  const filteredChats = searchQuery 
-    ? chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : chats;
+  // All hooks and usages of filteredChats now come after this declaration
+
+  // User search logic
+  const handleUserSearch = async () => {
+    if (!userSearchInput.trim()) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .or(`username.ilike.%${userSearchInput}%,first_name.ilike.%${userSearchInput}%,last_name.ilike.%${userSearchInput}%`)
+      .neq('id', user.id)
+      .limit(10);
+    if (!error && data) setUserSearchResults(data);
+  };
+  const startChatWithUser = (profile: any) => {
+    fetchRecipientProfile(profile.id);
+    setShowUserSearch(false);
+    setUserSearchInput('');
+    setUserSearchResults([]);
+  };
 
   if (!user) {
     return (
@@ -384,7 +497,54 @@ const Messages = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Messages</h1>
-      
+      <div className="flex justify-between mb-4">
+        <Button variant="outline" onClick={() => setShowUserSearch(true)}>
+          Search Users
+        </Button>
+        {activeGigs.length > 0 && (
+          <div className="flex gap-2 items-center">
+            <span className="font-medium">Active Gigs:</span>
+            {activeGigs.map(gig => (
+              <Button key={gig.id} size="sm" variant={selectedGig?.id === gig.id ? 'default' : 'outline'} onClick={() => setSelectedGig(gig)}>
+                {gig.title}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+      {/* User Search Modal */}
+      <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Search Users</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Search by username or name..."
+            value={userSearchInput}
+            onChange={e => setUserSearchInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleUserSearch()}
+          />
+          <Button className="mt-2" onClick={handleUserSearch}>Search</Button>
+          <div className="mt-4 space-y-2">
+            {userSearchResults.map(profile => (
+              <div key={profile.id} className="flex items-center gap-3 p-2 border rounded cursor-pointer hover:bg-gray-50" onClick={() => startChatWithUser(profile)}>
+                <Avatar>
+                  {profile.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={profile.first_name} />
+                  ) : (
+                    <AvatarFallback>{(profile.first_name?.[0] || 'U') + (profile.last_name?.[0] || '')}</AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <div className="font-medium">{profile.first_name} {profile.last_name}</div>
+                  <div className="text-xs text-muted-foreground">@{profile.username}</div>
+                </div>
+                <Button size="sm" className="ml-auto">Start Chat</Button>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(80vh-8rem)]">
         {/* Chats list */}
         <Card className="md:col-span-1 overflow-hidden">
@@ -399,7 +559,17 @@ const Messages = () => {
               />
             </div>
           </div>
-          
+          {/* Optionally, show active gigs at the top */}
+          {activeGigs.length > 0 && (
+            <div className="p-2 border-b bg-gray-50">
+              <div className="font-semibold text-xs mb-1">Active Gigs</div>
+              {activeGigs.map(gig => (
+                <div key={gig.id} className={`p-2 rounded cursor-pointer hover:bg-gray-100 ${selectedGig?.id === gig.id ? 'bg-gray-100' : ''}`} onClick={() => setSelectedGig(gig)}>
+                  {gig.title}
+                </div>
+              ))}
+            </div>
+          )}
           <ScrollArea className="h-[calc(80vh-12rem)]">
             {loading ? (
               <div className="p-4 text-center">
@@ -452,6 +622,14 @@ const Messages = () => {
         
         {/* Chat messages */}
         <Card className="md:col-span-2 flex flex-col">
+          {/* If a gig is selected, show gig context */}
+          {selectedGig && (
+            <div className="p-3 border-b bg-blue-50 flex items-center gap-2">
+              <span className="font-medium">Chat about:</span>
+              <span>{selectedGig.title}</span>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedGig(null)}>Clear</Button>
+            </div>
+          )}
           {activeChat !== null && filteredChats[activeChat] ? (
             <>
               <div className="p-3 border-b flex items-center gap-3">
@@ -467,16 +645,38 @@ const Messages = () => {
                 <div className="flex-1">
                   <h3 className="font-medium">{filteredChats[activeChat].name}</h3>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate(`/profile/${filteredChats[activeChat].recipient_id}`)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const recipientId = filteredChats[activeChat].recipient_id;
+                    const { data, error } = await supabase
+                      .from('profiles')
+                      .select('*')
+                      .eq('id', recipientId)
+                      .single();
+                    if (!error && data) {
+                      setProfileModalUser(data);
+                      setProfileModalOpen(true);
+                    } else {
+                      navigate(`/profile/${recipientId}`);
+                    }
+                  }}
+                >
                   View Profile
                 </Button>
               </div>
               
+              {/* In the chat message area, improve loading/error state */}
               <ScrollArea className="flex-1 p-4 h-[calc(80vh-18rem)]">
                 <div className="space-y-4 p-4 overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
                   {isLoadingMessages ? (
                     <div className="flex justify-center items-center h-32">
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gigstr-purple"></div>
+                    </div>
+                  ) : errorLoadingMessages ? (
+                    <div className="text-center py-8">
+                      <p className="text-red-500">Failed to load messages. Please try again later.</p>
                     </div>
                   ) : messages.length > 0 ? (
                     messages.map((message) => (
@@ -561,6 +761,31 @@ const Messages = () => {
           )}
         </Card>
       </div>
+      {/* Add Profile Preview Modal */}
+      <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Profile Preview</DialogTitle>
+          </DialogHeader>
+          {profileModalUser ? (
+            <div className="flex flex-col items-center gap-2">
+              <Avatar className="h-20 w-20">
+                {profileModalUser.avatar_url ? (
+                  <AvatarImage src={profileModalUser.avatar_url} alt={profileModalUser.first_name} />
+                ) : (
+                  <AvatarFallback>{(profileModalUser.first_name?.[0] || 'U') + (profileModalUser.last_name?.[0] || '')}</AvatarFallback>
+                )}
+              </Avatar>
+              <div className="font-bold text-lg">{profileModalUser.first_name} {profileModalUser.last_name}</div>
+              <div className="text-sm text-muted-foreground">@{profileModalUser.username}</div>
+              <div className="text-xs text-muted-foreground">{profileModalUser.bio || 'No bio provided.'}</div>
+              <Button size="sm" variant="outline" onClick={() => navigate(`/profile/${profileModalUser.id}`)}>Full Profile</Button>
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground">Loading...</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
