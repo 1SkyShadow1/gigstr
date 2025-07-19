@@ -13,10 +13,11 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Menu, User, LogOut, Grid, Settings, PlusCircle, Search, Bell, MessageSquare, Award, Clock, Hammer, Wrench, Home } from 'lucide-react';
+import { Menu, User, LogOut, Grid, Settings, PlusCircle, Search, Bell, MessageSquare, Award, Clock, Hammer, Wrench, Home, Sun, Moon, Monitor, Check } from 'lucide-react';
 import { useMobileDetect } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import ThemeSwitch from './ThemeSwitch';
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -28,6 +29,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
   const navigate = useNavigate();
   const isMobile = useMobileDetect();
   const { theme, toggle } = useTheme();
+  const themeMode = theme.mode;
 
   const getInitials = () => {
     if (profile?.first_name && profile?.last_name) {
@@ -48,135 +50,165 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
           </span>
         </Link>
         {/* Right: Navigation and Actions */}
-        <div className="flex items-center gap-4 ml-auto">
-          {/* Desktop nav links */}
+        <div className="flex items-center gap-4">
+          {/* Main navigation and quick actions for logged-in users */}
           {user && (
-            <nav className="hidden md:flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" asChild title="Home">
-                    <Link to="/dashboard">
-                      <Home className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Home</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" asChild title="Browse Gigs">
-                    <Link to="/gigs">
-                      <Search className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Browse Gigs</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" asChild title="Settings">
-                    <Link to="/settings">
-                      <Settings className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Settings</TooltipContent>
-              </Tooltip>
-            </nav>
+            <>
+              <nav className="hidden md:flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" asChild title="Home">
+                      <Link to="/dashboard">
+                        <Home className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Home</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" asChild title="Browse Gigs">
+                      <Link to="/gigs">
+                        <Search className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Browse Gigs</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" asChild title="Settings">
+                      <Link to="/settings">
+                        <Settings className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Settings</TooltipContent>
+                </Tooltip>
+              </nav>
+              <div className="hidden md:flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                      <Link to="/messages">
+                        <MessageSquare className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Messages</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                      <Link to="/notifications">
+                        <Bell className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Notifications</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                      <Link to="/rewards">
+                        <Award className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Rewards</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                      <Link to="/tools">
+                        <Clock className="h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Tools</TooltipContent>
+                </Tooltip>
+              </div>
+            </>
           )}
-          {/* Quick action buttons (desktop) */}
-          {user && (
-            <div className="hidden md:flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                    <Link to="/messages">
-                      <MessageSquare className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Messages</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                    <Link to="/notifications">
-                      <Bell className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Notifications</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                    <Link to="/rewards">
-                      <Award className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Rewards</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                    <Link to="/tools">
-                      <Clock className="h-5 w-5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Tools</TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-          {/* Mobile hamburger menu */}
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setSidebarOpen(true)}
-              title="Open menu"
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
-          )}
-          {/* User menu */}
+          {/* User menu and theme toggle */}
           <div className="flex items-center gap-2">
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative rounded-full h-9 w-9 p-0">
-                    <Avatar>
-                      {profile?.avatar_url ? (
-                        <AvatarImage src={profile.avatar_url} alt={profile.username} />
-                      ) : (
-                        <AvatarFallback className="bg-gigstr-purple text-white">
-                          {getInitials()}
-                        </AvatarFallback>
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative rounded-full h-9 w-9 p-0">
+                      <Avatar>
+                        {profile?.avatar_url ? (
+                          <AvatarImage src={profile.avatar_url} alt={profile.username} />
+                        ) : (
+                          <AvatarFallback className="bg-gigstr-purple text-white">
+                            {getInitials()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      {profile?.points && profile.points > 0 && (
+                        <Badge variant="default" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
+                          {profile.points}
+                        </Badge>
                       )}
-                    </Avatar>
-                    {profile?.points && profile.points > 0 && (
-                      <Badge variant="default" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
-                        {profile.points}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {/* Mobile nav links in dropdown */}
+                    <div className="md:hidden">
+                      <DropdownMenuItem asChild>
+                        <Link to="/dashboard">
+                          <Home className="mr-2 h-4 w-4" /> Home
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/gigs">
+                          <Search className="mr-2 h-4 w-4" /> Browse Gigs
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings">
+                          <Settings className="mr-2 h-4 w-4" /> Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/messages">
+                          <MessageSquare className="mr-2 h-4 w-4" /> Messages
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/notifications">
+                          <Bell className="mr-2 h-4 w-4" /> Notifications
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/rewards">
+                          <Award className="mr-2 h-4 w-4" /> Rewards
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/tools">
+                          <Clock className="mr-2 h-4 w-4" /> Tools
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </div>
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Custom Theme Switch */}
+                <ThemeSwitch />
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
@@ -188,8 +220,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
               </div>
             )}
           </div>
-          {/* Theme toggle button */}
-          {/* Removed theme toggle button as requested */}
         </div>
       </div>
     </header>
