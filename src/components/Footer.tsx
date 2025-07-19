@@ -36,9 +36,6 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-3">
               <li><Link to="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
-              <li><Link to="/careers" className="text-gray-400 hover:text-white transition-colors">Careers</Link></li>
-              <li><Link to="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
-              <li><Link to="/press" className="text-gray-400 hover:text-white transition-colors">Press</Link></li>
             </ul>
           </div>
 
@@ -46,9 +43,6 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-3">
               <li><Link to="/help" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
-              <li><Link to="/community" className="text-gray-400 hover:text-white transition-colors">Community</Link></li>
-              <li><Link to="/tutorials" className="text-gray-400 hover:text-white transition-colors">Tutorials</Link></li>
-              <li><Link to="/partners" className="text-gray-400 hover:text-white transition-colors">Partners</Link></li>
             </ul>
           </div>
 
@@ -57,8 +51,6 @@ const Footer = () => {
             <ul className="space-y-3">
               <li><Link to="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy</Link></li>
               <li><Link to="/terms" className="text-gray-400 hover:text-white transition-colors">Terms</Link></li>
-              <li><Link to="/security" className="text-gray-400 hover:text-white transition-colors">Security</Link></li>
-              <li><Link to="/cookies" className="text-gray-400 hover:text-white transition-colors">Cookies</Link></li>
             </ul>
           </div>
 
@@ -76,10 +68,6 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="md:flex md:justify-between md:items-center">
             <p className="text-gray-400 text-sm">&copy; {new Date().getFullYear()} Gigstr. All rights reserved.</p>
-            <div className="flex mt-4 md:mt-0 space-x-4">
-              <Link to="/accessibility" className="text-sm text-gray-400 hover:text-white transition-colors">Accessibility</Link>
-              <Link to="/sitemap" className="text-sm text-gray-400 hover:text-white transition-colors">Sitemap</Link>
-            </div>
           </div>
         </div>
       </div>

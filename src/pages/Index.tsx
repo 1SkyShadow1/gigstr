@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
+import { TrendingUp, Briefcase, CreditCard, Star } from 'lucide-react';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
@@ -153,16 +154,26 @@ const Index: React.FC = () => {
         <FeatureSection />
         <HowItWorks />
         {/* CTA Section */}
-        <section className="relative bg-gray-50 dark:bg-[var(--color-card)]">
+        <section className="relative bg-gray-50 dark:bg-[var(--color-card)] overflow-x-clip">
           {/* Background overlay pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1664575599618-8f6bd76fc670?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-cover bg-center"></div>
           </div>
+          {/* Floating SVG for extra flair */}
+          <svg className="absolute -top-10 left-1/4 animate-float-slow z-0" width="180" height="80" viewBox="0 0 180 80" fill="none">
+            <ellipse cx="90" cy="40" rx="90" ry="40" fill="#a259d9" fillOpacity="0.07" />
+          </svg>
           <div className="container-custom text-center relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Earning?</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Join thousands of freelancers who have found success on our platform. Create your account in minutes.
             </p>
+            <div className="flex flex-col items-center justify-center mb-6">
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-700 font-semibold text-sm shadow animate-bounce-once">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                100% Satisfaction Guarantee
+              </span>
+            </div>
             {!user && (
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
@@ -187,29 +198,21 @@ const Index: React.FC = () => {
         </section>
         <TestimonialSection />
         {/* Stats Section */}
-        <section className="section-padding bg-gray-50 dark:bg-[var(--color-card)] relative">
+        <section className="section-padding bg-gray-50 dark:bg-[var(--color-card)] relative overflow-x-clip">
           {/* Background pattern */}
           <div className="absolute inset-0 pointer-events-none opacity-5">
             <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-fixed bg-center"></div>
           </div>
+          {/* Floating SVG for extra flair */}
+          <svg className="absolute -bottom-10 right-1/4 animate-float-slow z-0" width="180" height="80" viewBox="0 0 180 80" fill="none">
+            <ellipse cx="90" cy="40" rx="90" ry="40" fill="#a259d9" fillOpacity="0.07" />
+          </svg>
           <div className="container-custom relative z-10">
             <div className="grid md:grid-cols-4 gap-8 text-center">
-              <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105">
-                <h3 className="text-4xl font-bold text-gigstr-purple mb-2">500K+</h3>
-                <p className="text-gray-600">Registered Users</p>
-              </div>
-              <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105">
-                <h3 className="text-4xl font-bold text-gigstr-indigo mb-2">100K+</h3>
-                <p className="text-gray-600">Active Projects</p>
-              </div>
-              <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105">
-                <h3 className="text-4xl font-bold text-gigstr-blue mb-2">R250M+</h3>
-                <p className="text-gray-600">Payments Processed</p>
-              </div>
-              <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105">
-                <h3 className="text-4xl font-bold text-gigstr-teal mb-2">4.8/5</h3>
-                <p className="text-gray-600">Average Rating</p>
-              </div>
+              <StatCard icon={<Briefcase className="h-8 w-8 text-gigstr-purple mb-2" />} value={500000} label="Registered Users" />
+              <StatCard icon={<CreditCard className="h-8 w-8 text-gigstr-indigo mb-2" />} value={100000} label="Active Projects" />
+              <StatCard icon={<TrendingUp className="h-8 w-8 text-gigstr-blue mb-2" />} value={250000000} label="Payments Processed" prefix="R" />
+              <StatCard icon={<Star className="h-8 w-8 text-gigstr-teal mb-2" />} value={4.8} label="Average Rating" isRating />
             </div>
           </div>
         </section>
@@ -218,5 +221,38 @@ const Index: React.FC = () => {
     </div>
   );
 };
+
+// StatCard component for animated numbers
+function StatCard({ icon, value, label, prefix, isRating }) {
+  const [displayValue, setDisplayValue] = React.useState(isRating ? value : 0);
+  React.useEffect(() => {
+    if (isRating) return;
+    let start = 0;
+    const end = value;
+    const duration = 1200;
+    const step = Math.ceil(end / 60);
+    let raf;
+    function animate() {
+      start += step;
+      if (start >= end) {
+        setDisplayValue(end);
+        return;
+      }
+      setDisplayValue(start);
+      raf = requestAnimationFrame(animate);
+    }
+    animate();
+    return () => raf && cancelAnimationFrame(raf);
+  }, [value, isRating]);
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105 flex flex-col items-center animate-fade-in-up">
+      {icon}
+      <h3 className="text-4xl font-bold mb-2">
+        {prefix || ''}{isRating ? value : displayValue.toLocaleString()}{isRating ? '/5' : ''}
+      </h3>
+      <p className="text-gray-600">{label}</p>
+    </div>
+  );
+}
 
 export default Index;
