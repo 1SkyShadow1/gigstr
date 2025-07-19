@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import React, { useState, useEffect } from "react";
 
@@ -37,20 +37,16 @@ import Analytics from "./pages/tools/Analytics";
 
 const queryClient = new QueryClient();
 
-function IndexRouteWrapper() {
-  const [showLoader, setShowLoader] = useState(true);
+function PublicRoute({ children }) {
+  const { user } = useAuth();
+  if (user) return <Navigate to="/dashboard" replace />;
+  return children;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLoader(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (showLoader) {
-    return <Index forceLoader />;
-  }
-  return <MainLayout><Index /></MainLayout>;
+function PrivateRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/" replace />;
+  return children;
 }
 
 const App = () => (
@@ -60,27 +56,25 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<IndexRouteWrapper />} />
-            <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
-            <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
-            <Route path="/gigs" element={<MainLayout><Gigs /></MainLayout>} />
-            <Route path="/gigs/:id" element={<MainLayout><GigDetail /></MainLayout>} />
-            <Route path="/create-gig" element={<MainLayout><CreateGig /></MainLayout>} />
-            <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
-            <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
-            <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
-            <Route path="/rewards" element={<MainLayout><Rewards /></MainLayout>} />
-            
+            <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+            <Route path="/dashboard" element={<PrivateRoute><MainLayout><Dashboard /></MainLayout></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><MainLayout><Profile /></MainLayout></PrivateRoute>} />
+            <Route path="/gigs" element={<PrivateRoute><MainLayout><Gigs /></MainLayout></PrivateRoute>} />
+            <Route path="/gigs/:id" element={<PrivateRoute><MainLayout><GigDetail /></MainLayout></PrivateRoute>} />
+            <Route path="/create-gig" element={<PrivateRoute><MainLayout><CreateGig /></MainLayout></PrivateRoute>} />
+            <Route path="/messages" element={<PrivateRoute><MainLayout><Messages /></MainLayout></PrivateRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><MainLayout><Notifications /></MainLayout></PrivateRoute>} />
+            <Route path="/settings" element={<PrivateRoute><MainLayout><Settings /></MainLayout></PrivateRoute>} />
+            <Route path="/rewards" element={<PrivateRoute><MainLayout><Rewards /></MainLayout></PrivateRoute>} />
             {/* Tools routes */}
-            <Route path="/tools" element={<MainLayout><Tools /></MainLayout>} />
-            <Route path="/tools/invoicing" element={<MainLayout><Invoicing /></MainLayout>} />
-            <Route path="/tools/time-tracking" element={<MainLayout><TimeTracking /></MainLayout>} />
-            <Route path="/tools/project-management" element={<MainLayout><ProjectManagement /></MainLayout>} />
-            <Route path="/tools/schedule-planner" element={<MainLayout><SchedulePlanner /></MainLayout>} />
-            <Route path="/tools/contracts" element={<MainLayout><Contracts /></MainLayout>} />
-            <Route path="/tools/trustlock" element={<MainLayout><TrustLock /></MainLayout>} />
-            <Route path="/tools/analytics" element={<MainLayout><Analytics /></MainLayout>} />
-            
+            <Route path="/tools" element={<PrivateRoute><MainLayout><Tools /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/invoicing" element={<PrivateRoute><MainLayout><Invoicing /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/time-tracking" element={<PrivateRoute><MainLayout><TimeTracking /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/project-management" element={<PrivateRoute><MainLayout><ProjectManagement /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/schedule-planner" element={<PrivateRoute><MainLayout><SchedulePlanner /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/contracts" element={<PrivateRoute><MainLayout><Contracts /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/trustlock" element={<PrivateRoute><MainLayout><TrustLock /></MainLayout></PrivateRoute>} />
+            <Route path="/tools/analytics" element={<PrivateRoute><MainLayout><Analytics /></MainLayout></PrivateRoute>} />
             <Route path="/about" element={<MainLayout><About /></MainLayout>} />
             <Route path="/help" element={<MainLayout><Help /></MainLayout>} />
             <Route path="/privacy" element={<MainLayout><Privacy /></MainLayout>} />

@@ -43,7 +43,7 @@ const HeroSection = () => {
               <Button 
                 variant="glow"
                 className="text-lg h-12 px-8"
-                onClick={() => navigate('/gigs')}
+                onClick={() => navigate('/auth')}
               >
                 Find Workers Now
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -51,7 +51,7 @@ const HeroSection = () => {
               <Button 
                 variant="outline" 
                 className="border-gigstr-purple text-gigstr-purple hover:bg-gigstr-purple/10 text-lg h-12"
-                onClick={() => navigate('/create-gig')}
+                onClick={() => navigate('/auth?tab=signup')}
               >
                 Offer Your Services
               </Button>

@@ -9,32 +9,27 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import Header from '@/components/Header';
 
-interface IndexProps {
-  forceLoader?: boolean;
-}
-
-const Index: React.FC<IndexProps> = ({ forceLoader }) => {
+const Index: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showLoader, setShowLoader] = useState(false);
-  const [loaderDone, setLoaderDone] = useState(false);
+  const [showLoader, setShowLoader] = useState(() => !user);
 
   useEffect(() => {
-    if (!user) {
-      setShowLoader(true);
-      const timer = setTimeout(() => {
-        setLoaderDone(true);
-        setShowLoader(false);
-      }, 5000); // 5 seconds
-      return () => clearTimeout(timer);
-    } else {
-      setLoaderDone(true);
-      setShowLoader(false);
+    if (user) {
+      navigate('/dashboard', { replace: true });
+      return;
     }
-  }, [user]);
+    if (showLoader) {
+      const timer = setTimeout(() => {
+        setShowLoader(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, showLoader, navigate]);
 
-  if ((showLoader && !loaderDone) || forceLoader) {
+  if (showLoader) {
     return (
       <div
         className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-screen min-w-full animate-glow"
@@ -149,48 +144,54 @@ const Index: React.FC<IndexProps> = ({ forceLoader }) => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen flex flex-col bg-transparent">
+      <Header sidebarOpen={false} setSidebarOpen={() => {}} />
       <main className="flex-grow">
         <HeroSection />
         <FeatureSection />
         <HowItWorks />
-        
         {/* CTA Section */}
         <section className="relative bg-gray-50 dark:bg-[var(--color-card)]">
           {/* Background overlay pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1664575599618-8f6bd76fc670?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-cover bg-center"></div>
           </div>
-          
           <div className="container-custom text-center relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Start Earning?</h2>
             <p className="text-xl mb-8 max-w-2xl mx-auto">
               Join thousands of freelancers who have found success on our platform. Create your account in minutes.
             </p>
             {!user && (
-              <Button 
-                size="lg" 
-                className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300"
-                onClick={() => navigate('/auth')}
-              >
-                Sign Up Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  className="bg-white text-gigstr-purple hover:bg-gray-100 text-lg h-12 px-8 shadow-lg transform transition-transform hover:scale-105 duration-300"
+                  onClick={() => navigate('/auth?tab=signup')}
+                >
+                  Sign Up Now
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="border-gigstr-purple text-gigstr-purple hover:bg-gigstr-purple/10 text-lg h-12 px-8"
+                  onClick={() => navigate('/auth')}
+                >
+                  Sign In
+                </Button>
+              </div>
             )}
           </div>
         </section>
-        
         <TestimonialSection />
-        
         {/* Stats Section */}
         <section className="section-padding bg-gray-50 dark:bg-[var(--color-card)] relative">
           {/* Background pattern */}
           <div className="absolute inset-0 pointer-events-none opacity-5">
             <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80')] bg-no-repeat bg-fixed bg-center"></div>
           </div>
-          
           <div className="container-custom relative z-10">
             <div className="grid md:grid-cols-4 gap-8 text-center">
               <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 transform transition-all hover:shadow-md hover:scale-105">

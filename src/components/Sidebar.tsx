@@ -102,9 +102,8 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             )}
             
             <div className="space-y-1 py-2">
-              <SidebarItem icon={Home} label="Home" to="/" onClick={closeSidebarOnMobile} />
+              <SidebarItem icon={Home} label="Home" to="/dashboard" onClick={closeSidebarOnMobile} />
               <SidebarItem icon={Search} label="Browse Gigs" to="/gigs" onClick={closeSidebarOnMobile} />
-              <SidebarItem icon={BriefcaseBusiness} label="Dashboard" to="/dashboard" onClick={closeSidebarOnMobile} />
             </div>
             
             <Separator className="my-4" />

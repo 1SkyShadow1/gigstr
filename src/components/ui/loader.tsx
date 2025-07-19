@@ -1,78 +1,25 @@
 import React from 'react';
 
+// Modern dual-ring loader inspired by uiverse.io, themed for gigstr
 const Loader = () => (
-  <div className="loader">
-    <p className="text">loading...</p>
+  <div className="flex flex-col items-center justify-center" role="status" aria-live="polite">
+    <span className="sr-only">Loading...</span>
+    <span className="gigstr-loader"></span>
     <style>{`
-      .loader {
-        --col1: rgba(228, 19, 141, 0.925);
-        --col2: rgb(255, 179, 80);
-        font-size: 2em;
-        font-weight: 600;
-        perspective: 800px;
-        position: relative;
+      .gigstr-loader {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(128, 90, 213, 0.15); /* gigstr-purple/20 */
+        border-top: 4px solid #805ad5; /* gigstr-purple */
+        border-right: 4px solid #3b82f6; /* gigstr-blue */
+        border-radius: 50%;
+        animation: gigstr-spin 1s linear infinite;
+        box-shadow: 0 2px 16px 0 rgba(128,90,213,0.10);
       }
-      .loader::after,
-      .loader::before,
-      .loader .text::after,
-      .loader .text::before {
-        perspective: 800px;
-        animation: anim 2s ease-in-out infinite, dotMove 10s ease-out alternate infinite, move 10s linear infinite 1s;
-        content: '●';
-        color: var(--col1);
-        position: absolute;
-        translate: -60px 500px;
-        width: 5px;
-        height: 5px;
-      }
-      .loader::before {
-        animation-delay: 3s;
-        color: var(--col1);
-      }
-      .loader .text::before {
-        color: var(--col2);
-        animation-delay: 2s;
-      }
-      .loader .text::after {
-        color: var(--col2);
-      }
-      .loader .text {
-        animation: anim 20s linear infinite, move 10s linear infinite 1s;
-        color: transparent;
-        background-image: linear-gradient(90deg, var(--col1) 0%, var(--col2) 100%);
-        background-clip: text;
-        background-size: 100%;
-        background-repeat: no-repeat;
-        transform: skew(5deg, -5deg);
-        -webkit-background-clip: text;
-        position: relative;
-      }
-      @keyframes anim {
-        0%, 100% {
-          text-shadow: 2px 0px 2px rgba(179, 158, 158, .5);
-        }
-        50% {
-          background-size: 0%;
-          background-position-x: left;
-          text-shadow: 2px 10px 6px rgba(179, 158, 158, 1);
-        }
-      }
-      @keyframes move {
-        50% {
-          translate: 0px 0px;
-          rotate: x 60deg;
-          transform: skew(-5deg, 5deg);
-        }
-      }
-      @keyframes dotMove {
-        0%, 100% {
-          translate: -60px 300px;
-        }
-        50% {
-          translate: 160px -250px;
-          scale: .5;
-          opacity: .85;
-        }
+      @keyframes gigstr-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
       }
     `}</style>
   </div>
