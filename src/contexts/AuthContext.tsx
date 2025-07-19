@@ -140,10 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
-      
-      if (error) throw error;
-      
       setReauthenticatedAt(null);
+      if (error && !error.message.includes('auth session missing')) throw error;
       toast({
         title: "Signed out",
         description: "You've been signed out successfully",

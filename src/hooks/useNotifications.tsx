@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { messaging, getToken, onMessage } from '@/integrations/firebase';
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -27,6 +28,44 @@ export const useNotifications = () => {
           handleNewNotification(payload.new);
         })
         .subscribe();
+        
+      // FCM: Request permission and get token
+      if (window.Notification && Notification.permission !== 'granted') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            getToken(messaging, { vapidKey: 'BBm-UlrzqXZCmdrGfiIc8a3x0r0UtGJtZ-K4qotAAqOAb47YtcdJ_ifn0WbbGk9Um7IdTPpieAznXu-YVkVs' })
+              .then(async (currentToken) => {
+                if (currentToken) {
+                  // Store the FCM token in Supabase if new or changed
+                  const { data: existing, error: fetchError } = await supabase
+                    .from('fcm_tokens')
+                    .select('token')
+                    .eq('user_id', user.id)
+                    .eq('token', currentToken)
+                    .single();
+                  if (!existing) {
+                    await supabase
+                      .from('fcm_tokens')
+                      .upsert({ user_id: user.id, token: currentToken });
+                  }
+                  console.log('FCM Token registered:', currentToken);
+                }
+              })
+              .catch((err) => {
+                console.error('An error occurred while retrieving token. ', err);
+              });
+          }
+        });
+      }
+      // Listen for foreground messages
+      onMessage(messaging, (payload) => {
+        console.log('Message received. ', payload);
+        // Optionally show a toast or in-app notification
+        toast({
+          title: payload.notification?.title || 'Notification',
+          description: payload.notification?.body || '',
+        });
+      });
         
       return () => {
         supabase.removeChannel(channel);

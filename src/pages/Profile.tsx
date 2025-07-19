@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChangeEmailDialog from '@/components/ChangeEmailDialog';
 import ReauthenticationModal from '@/components/ReauthenticationModal';
 import Loader from '@/components/ui/loader';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 const Profile = () => {
   const { user, profile, isLoading, updatePassword, isReauthenticationRequired } = useAuth();
@@ -42,6 +43,20 @@ const Profile = () => {
   const [showReauth, setShowReauth] = useState(false);
   const [pendingOperation, setPendingOperation] = useState<(() => void) | null>(null);
   
+  // Add state for banking details
+  const [bankName, setBankName] = useState(profile?.bank_name || '');
+  const [accountName, setAccountName] = useState(profile?.account_name || '');
+  const [accountNumber, setAccountNumber] = useState(profile?.account_number || '');
+  const [branchName, setBranchName] = useState(profile?.branch_name || '');
+  const [branchCode, setBranchCode] = useState(profile?.branch_code || '');
+  const [swiftCode, setSwiftCode] = useState(profile?.swift_code || '');
+  const [accountType, setAccountType] = useState(profile?.account_type || '');
+
+  // Skills dropdown options (extensive list)
+  const skillOptions = Array.from(new Set([
+    'Electrician', 'Plumbing', 'Tutoring', 'Babysitting', 'Dog Walking', 'House Sitting', 'Gardening', 'Cleaning', 'IT Support', 'Construction', 'Painting', 'Security', 'Cooking', 'Childcare', 'Transportation', 'Domestic Work', 'Carpentry', 'Mechanic', 'Personal Training', 'Fitness Coaching', 'Graphic Design', 'Web Development', 'Photography', 'Videography', 'Event Planning', 'Catering', 'Makeup Artist', 'Hairdressing', 'Nail Technician', 'Massage Therapy', 'Elderly Care', 'Pet Sitting', 'Laundry', 'Sewing', 'Translation', 'Copywriting', 'Social Media Management', 'Data Entry', 'Virtual Assistance', 'Accounting', 'Bookkeeping', 'Legal Assistance', 'Marketing', 'Sales', 'Driving', 'Moving Services', 'Handyman', 'Roofing', 'Landscaping', 'Pool Maintenance', 'Window Cleaning', 'Pest Control', 'Courier', 'Delivery', 'Barber', 'DJ', 'Music Lessons', 'Dance Lessons', 'Yoga Instruction', 'Fitness Classes', 'Swimming Lessons', 'Surf Lessons', 'Ski Instructor', 'Tour Guide', 'Private Chef', 'Baking', 'Bartending', 'Waitering', 'Hostessing', 'Receptionist', 'Call Center', 'Customer Service', 'Tech Support', 'App Development', 'UI/UX Design', 'Interior Design', 'Property Management', 'Real Estate Agent', 'Auctioneer', 'Valet', 'Security Guard', 'Doorman', 'Concierge', 'Personal Shopper', 'Fashion Stylist', 'Tailoring', 'Shoe Repair', 'Watch Repair', 'Jewelry Repair', 'Locksmith', 'Plastering', 'Tiling', 'Flooring', 'Glazing', 'Scaffolding', 'Demolition', 'Waste Removal', 'Recycling', 'IT Consulting', 'Network Installation', 'PC Repair', 'Mobile Repair', 'Drone Services', '3D Printing', 'CNC Machining', 'Welding', 'Blacksmith', 'Goldsmith', 'Silversmith', 'Upholstery', 'Antique Restoration', 'Furniture Assembly', 'Furniture Repair', 'Window Installation', 'Door Installation', 'Alarm Installation', 'CCTV Installation', 'Satellite Installation', 'Solar Installation', 'Wind Turbine Maintenance', 'Car Wash', 'Boat Cleaning', 'Aircraft Cleaning', 'Logistics', 'Supply Chain', 'Inventory Management', 'Warehouse Work', 'Forklift Operation', 'Crane Operation', 'Heavy Machinery', 'Excavation', 'Surveying', 'Geology', 'Environmental Consulting', 'Waste Management', 'Hazardous Material Handling', 'Fire Safety', 'First Aid', 'Paramedic', 'Nursing', 'Medical Assistance', 'Pharmacy', 'Lab Technician', 'Dentistry', 'Veterinary', 'Animal Grooming', 'Animal Training', 'Dog Breeding', 'Cat Breeding', 'Horse Training', 'Horse Grooming', 'Stable Management', 'Farm Work', 'Agriculture', 'Beekeeping', 'Fishing', 'Hunting', 'Wildlife Management', 'Forestry', 'Park Ranger', 'Game Warden', 'Tourism', 'Travel Planning', 'Ticketing', 'Visa Assistance', 'Language Teaching', 'Music Teaching', 'Art Teaching', 'Science Tutoring', 'Math Tutoring', 'Exam Coaching', 'University Applications', 'Scholarship Applications', 'Resume Writing', 'Career Coaching', 'Life Coaching', 'Business Consulting', 'Startup Mentoring', 'Investment Advice', 'Financial Planning', 'Tax Consulting', 'Insurance Advice', 'Estate Planning', 'Funeral Services', 'Wedding Planning', 'Event Hosting', 'MC', 'Public Speaking', 'Voice Over', 'Acting', 'Modeling', 'Casting', 'Stunt Work', 'Set Design', 'Lighting', 'Sound Engineering', 'Stage Management', 'Production Assistance', 'Directing', 'Script Writing', 'Editing', 'Proofreading', 'Publishing', 'Printing', 'Distribution', 'Courier', 'Logistics', 'Supply Chain', 'Procurement', 'Quality Control', 'Inspection', 'Auditing', 'Compliance', 'Risk Management', 'Project Management', 'Scrum Master', 'Agile Coaching', 'Product Management', 'Business Analysis', 'Market Research', 'Branding', 'Advertising', 'PR', 'Media Buying', 'Influencer Marketing', 'SEO', 'SEM', 'Content Creation', 'Blogging', 'Podcasting', 'Vlogging', 'YouTube Management', 'Twitch Streaming', 'eSports Coaching', 'Game Testing', 'Game Development', 'Animation', '3D Modeling', '2D Art', 'Illustration', 'Cartooning', 'Comics', 'Storyboarding', 'Voice Acting', 'Sound Design', 'Music Production', 'Songwriting', 'Composition', 'Arranging', 'Conducting', 'Orchestration', 'Choir Direction', 'Band Management', 'Tour Management', 'Merchandising', 'Ticket Sales', 'Fan Engagement', 'Community Management', 'Forum Moderation', 'Discord Management', 'Telegram Management', 'WhatsApp Group Management', 'Slack Management', 'Microsoft Teams Management', 'Zoom Hosting', 'Webinar Hosting', 'Online Course Creation', 'eLearning Development', 'Instructional Design', 'Curriculum Development', 'Lesson Planning', 'Exam Setting', 'Grading', 'Assessment', 'Student Counseling', 'Parent Counseling', 'Special Needs Education', 'Speech Therapy', 'Occupational Therapy', 'Physical Therapy', 'Rehabilitation', 'Sports Coaching', 'Athlete Management', 'Scouting', 'Talent Management', 'Casting', 'Audition Coaching', 'Portfolio Development', 'Showreel Editing', 'Demo Reel Production', 'Photography Editing', 'Photo Retouching', 'Video Editing', 'Color Grading', 'Motion Graphics', 'Visual Effects', 'CGI', 'SFX', 'VFX', 'Sound Mixing', 'Mastering', 'Audio Restoration', 'Noise Reduction', 'Podcast Editing', 'Audiobook Production', 'Transcription', 'Translation', 'Subtitling', 'Captioning', 'Dubbing', 'Localization', 'Internationalization', 'Export Consulting', 'Import Consulting', 'Customs Brokerage', 'Freight Forwarding', 'Shipping', 'Maritime Services', 'Port Services', 'Harbor Management', 'Dock Work', 'Stevedoring', 'Cargo Handling', 'Container Management', 'Warehouse Management', 'Inventory Control', 'Stock Taking', 'Order Fulfillment', 'Pick and Pack', 'Delivery Management', 'Route Planning', 'Fleet Management', 'Driver Management', 'Vehicle Maintenance', 'Tyre Fitting', 'Wheel Alignment', 'Panel Beating', 'Spray Painting', 'Auto Detailing', 'Car Wrapping', 'Window Tinting', 'Alarm Installation', 'Tracker Installation', 'Fleet Tracking', 'Telematics', 'Insurance Claims', 'Accident Management', 'Breakdown Assistance', 'Roadside Assistance', 'Towing', 'Recovery', 'Salvage', 'Auction Services', 'Valuation', 'Appraisal', 'Estate Sales', 'Liquidation', 'Bankruptcy Services', 'Debt Collection', 'Credit Control', 'Loan Processing', 'Mortgage Broking', 'Real Estate Broking', 'Property Valuation', 'Surveying', 'Landscaping', 'Horticulture', 'Arboriculture', 'Tree Surgery', 'Tree Felling', 'Stump Removal', 'Garden Design', 'Garden Maintenance', 'Irrigation', 'Water Features', 'Pond Maintenance', 'Aquarium Maintenance', 'Pet Sitting', 'Dog Walking', 'Cat Sitting', 'Bird Sitting', 'Fish Feeding', 'Reptile Care', 'Exotic Pet Care', 'Pet Taxi', 'Pet Boarding', 'Pet Grooming', 'Pet Training', 'Pet Photography', 'Pet Portraits', 'Pet Art', 'Pet Memorials', 'Pet Burial', 'Pet Cremation', 'Pet Insurance', 'Pet Nutrition', 'Pet Supplies', 'Pet Accessories', 'Pet Toys', 'Pet Clothing', 'Pet Furniture', 'Pet Bedding', 'Pet Carriers', 'Pet Travel', 'Pet Relocation', 'Pet Adoption', 'Pet Rescue', 'Pet Fostering', 'Pet Rehoming', 'Pet Welfare', 'Pet Advocacy', 'Pet Fundraising', 'Pet Volunteering', 'Pet Events', 'Pet Shows', 'Pet Competitions', 'Pet Awards', 'Pet Charities', 'Pet Organizations', 'Pet Clubs', 'Pet Societies', 'Pet Forums', 'Pet Blogs', 'Pet Magazines', 'Pet News', 'Pet TV', 'Pet Radio', 'Pet Podcasts', 'Pet Videos', 'Pet Photos', 'Pet Stories', 'Pet Advice', 'Pet Tips', 'Pet Guides', 'Pet Books', 'Pet Courses', 'Pet Training', 'Pet Certification', 'Pet Licensing', 'Pet Registration', 'Pet Microchipping', 'Pet Vaccination', 'Pet Health Checks', 'Pet Surgery', 'Pet Dentistry', 'Pet Orthopedics', 'Pet Oncology', 'Pet Dermatology', 'Pet Cardiology', 'Pet Neurology', 'Pet Ophthalmology', 'Pet Radiology', 'Pet Pathology', 'Pet Rehabilitation', 'Pet Physiotherapy', 'Pet Hydrotherapy', 'Pet Acupuncture', 'Pet Chiropractic', 'Pet Homeopathy', 'Pet Herbalism', 'Pet Nutritionist', 'Pet Behaviorist', 'Pet Trainer', 'Pet Sitter', 'Pet Walker', 'Pet Groomer', 'Pet Boarder', 'Pet Breeder', 'Pet Fosterer', 'Pet Rescuer', 'Pet Advocate', 'Pet Volunteer', 'Pet Fundraiser', 'Pet Event Organizer', 'Pet Show Judge', 'Pet Competition Judge', 'Pet Award Judge', 'Pet Charity Worker', 'Pet Organization Worker', 'Pet Club Member', 'Pet Society Member', 'Pet Forum Moderator', 'Pet Blog Writer', 'Pet Magazine Writer', 'Pet News Reporter', 'Pet TV Presenter', 'Pet Radio Presenter', 'Pet Podcast Host', 'Pet Video Creator', 'Pet Photographer', 'Pet Portrait Artist', 'Pet Story Writer', 'Pet Advice Columnist', 'Pet Tips Writer', 'Pet Guide Writer', 'Pet Book Author', 'Pet Course Creator'
+  ]));
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -608,21 +623,26 @@ const Profile = () => {
                               </Badge>
                             ))}
                           </div>
-                          <div className="flex gap-2">
-                            <Input 
-                              id="skills" 
-                              value={newSkill} 
-                              onChange={(e) => setNewSkill(e.target.value)} 
-                              placeholder="Add a skill"
-                              onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
-                            />
-                            <Button 
-                              type="button" 
-                              onClick={handleAddSkill} 
-                              size="icon"
+                          <div className="flex gap-2 items-center">
+                            <Select
+                              value=""
+                              onValueChange={(value) => {
+                                if (value && !skills.includes(value)) {
+                                  setSkills([...skills, value]);
+                                }
+                              }}
                             >
-                              <PlusCircle className="h-4 w-4" />
-                            </Button>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a skill" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {skillOptions.map((option) => (
+                                  <SelectItem key={option} value={option} disabled={skills.includes(option)}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                         

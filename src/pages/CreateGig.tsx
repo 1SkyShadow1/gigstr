@@ -46,6 +46,8 @@ const locations = [
   "Other"
 ];
 
+const paymentMethods = ['EFT', 'Cash'];
+
 const CreateGig = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [title, setTitle] = useState('');
@@ -56,6 +58,7 @@ const CreateGig = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [paymentMethod, setPaymentMethod] = useState('EFT');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -90,7 +93,8 @@ const CreateGig = () => {
         price: parseFloat(price),
         location: location || 'Remote',
         client_id: user?.id,
-        status: 'open'
+        status: 'open',
+        // payment_method is not in the gigs table schema, so we do not send it to Supabase
       };
       
       const { data, error } = await supabase
@@ -214,6 +218,24 @@ const CreateGig = () => {
                   <SelectContent>
                     {locations.map(loc => (
                       <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="paymentMethod" className="mb-2 block">Payment Method*</Label>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                  required
+                >
+                  <SelectTrigger id="paymentMethod">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map(method => (
+                      <SelectItem key={method} value={method}>{method}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

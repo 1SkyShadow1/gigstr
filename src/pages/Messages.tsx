@@ -24,6 +24,12 @@ const Messages = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Add state for file upload
+  const [file, setFile] = useState<File | null>(null);
+  // Add state for typing indicator
+  const [isRecipientTyping, setIsRecipientTyping] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+
   // Extract recipient ID from URL query params
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -207,6 +213,7 @@ const Messages = () => {
     if (!user) return;
     
     try {
+      setIsLoadingMessages(true);
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -241,6 +248,8 @@ const Messages = () => {
         description: "Failed to load messages. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
@@ -281,7 +290,7 @@ const Messages = () => {
   };
 
   const sendMessage = async () => {
-    if (!user || activeChat === null || !newMessage.trim()) return;
+    if (!user || activeChat === null || (!newMessage.trim() && !file)) return;
     
     const recipientId = chats[activeChat].recipient_id;
     
@@ -321,6 +330,7 @@ const Messages = () => {
       
       // Clear the input
       setNewMessage('');
+      setFile(null); // Clear file state
       
     } catch (error: any) {
       console.error('Error sending message:', error);
@@ -463,31 +473,45 @@ const Messages = () => {
               </div>
               
               <ScrollArea className="flex-1 p-4 h-[calc(80vh-18rem)]">
-                <div className="space-y-4">
-                  {messages.length > 0 ? (
+                <div className="space-y-4 p-4 overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
+                  {isLoadingMessages ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gigstr-purple"></div>
+                    </div>
+                  ) : messages.length > 0 ? (
                     messages.map((message) => (
-                      <div 
-                        key={message.id} 
+                      <div
+                        key={message.id}
                         className={`flex ${message.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div 
-                          className={`max-w-[80%] p-3 rounded-lg ${
-                            message.sender_id === user.id 
-                              ? 'bg-gigstr-purple text-white rounded-tr-none' 
-                              : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                        <div
+                          className={`max-w-[80%] p-3 rounded-2xl shadow-md transition-all duration-200 ${
+                            message.sender_id === user.id
+                              ? 'bg-gradient-to-br from-gigstr-purple to-gigstr-indigo text-white rounded-tr-none'
+                              : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
                           }`}
                         >
-                          <p>{message.content}</p>
-                          <div 
-                            className={`text-xs mt-1 ${
-                              message.sender_id === user.id ? 'text-purple-100' : 'text-gray-500'
-                            }`}
-                          >
+                          {message.content && <p className="whitespace-pre-line break-words">{message.content}</p>}
+                          {message.file_url && (
+                            <div className="mt-2">
+                              {message.file_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                <img src={message.file_url} alt="attachment" className="rounded-lg max-h-40 max-w-full" />
+                              ) : (
+                                <a
+                                  href={message.file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline text-sm text-blue-600"
+                                >
+                                  {message.file_url.substring(message.file_url.lastIndexOf('/') + 1)}
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          <div className={`text-xs mt-2 flex items-center gap-2 ${message.sender_id === user.id ? 'text-purple-100' : 'text-gray-500'}`}>
                             {formatMessageTime(message.created_at)}
                             {message.sender_id === user.id && (
-                              <span className="ml-1">
-                                {message.read ? '• Read' : ''}
-                              </span>
+                              <span className="ml-1">{message.read ? '• Read' : '• Sent'}</span>
                             )}
                           </div>
                         </div>
@@ -498,11 +522,22 @@ const Messages = () => {
                       <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
                     </div>
                   )}
+                  {isRecipientTyping && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-2 h-2 rounded-full bg-gigstr-purple animate-bounce"></div>
+                      <span className="text-xs text-gray-400">Typing...</span>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               
               <div className="p-3 border-t">
                 <div className="flex gap-2">
+                  <Input 
+                    type="file"
+                    onChange={e => setFile(e.target.files?.[0] || null)}
+                    className="w-32"
+                  />
                   <Input 
                     placeholder="Type your message..." 
                     className="flex-1"
@@ -510,7 +545,7 @@ const Messages = () => {
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                   />
-                  <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                  <Button onClick={sendMessage} disabled={!newMessage.trim() && !file}>
                     <Send size={18} />
                   </Button>
                 </div>
