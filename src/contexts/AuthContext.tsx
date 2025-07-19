@@ -154,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } finally {
       setIsLoading(false);
+      // Always redirect to landing page after logout
+      window.location.href = '/';
     }
   };
 
