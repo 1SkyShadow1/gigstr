@@ -59,6 +59,43 @@ const Profile = () => {
     'Electrician', 'Plumbing', 'Tutoring', 'Babysitting', 'Dog Walking', 'House Sitting', 'Gardening', 'Cleaning', 'IT Support', 'Construction', 'Painting', 'Security', 'Cooking', 'Childcare', 'Transportation', 'Domestic Work', 'Carpentry', 'Mechanic', 'Personal Training', 'Fitness Coaching', 'Graphic Design', 'Web Development', 'Photography', 'Videography', 'Event Planning', 'Catering', 'Makeup Artist', 'Hairdressing', 'Nail Technician', 'Massage Therapy', 'Elderly Care', 'Pet Sitting', 'Laundry', 'Sewing', 'Translation', 'Copywriting', 'Social Media Management', 'Data Entry', 'Virtual Assistance', 'Accounting', 'Bookkeeping', 'Legal Assistance', 'Marketing', 'Sales', 'Driving', 'Moving Services', 'Handyman', 'Roofing', 'Landscaping', 'Pool Maintenance', 'Window Cleaning', 'Pest Control', 'Courier', 'Delivery', 'Barber', 'DJ', 'Music Lessons', 'Dance Lessons', 'Yoga Instruction', 'Fitness Classes', 'Swimming Lessons', 'Surf Lessons', 'Ski Instructor', 'Tour Guide', 'Private Chef', 'Baking', 'Bartending', 'Waitering', 'Hostessing', 'Receptionist', 'Call Center', 'Customer Service', 'Tech Support', 'App Development', 'UI/UX Design', 'Interior Design', 'Property Management', 'Real Estate Agent', 'Auctioneer', 'Valet', 'Security Guard', 'Doorman', 'Concierge', 'Personal Shopper', 'Fashion Stylist', 'Tailoring', 'Shoe Repair', 'Watch Repair', 'Jewelry Repair', 'Locksmith', 'Plastering', 'Tiling', 'Flooring', 'Glazing', 'Scaffolding', 'Demolition', 'Waste Removal', 'Recycling', 'IT Consulting', 'Network Installation', 'PC Repair', 'Mobile Repair', 'Drone Services', '3D Printing', 'CNC Machining', 'Welding', 'Blacksmith', 'Goldsmith', 'Silversmith', 'Upholstery', 'Antique Restoration', 'Furniture Assembly', 'Furniture Repair', 'Window Installation', 'Door Installation', 'Alarm Installation', 'CCTV Installation', 'Satellite Installation', 'Solar Installation', 'Wind Turbine Maintenance', 'Car Wash', 'Boat Cleaning', 'Aircraft Cleaning', 'Logistics', 'Supply Chain', 'Inventory Management', 'Warehouse Work', 'Forklift Operation', 'Crane Operation', 'Heavy Machinery', 'Excavation', 'Surveying', 'Geology', 'Environmental Consulting', 'Waste Management', 'Hazardous Material Handling', 'Fire Safety', 'First Aid', 'Paramedic', 'Nursing', 'Medical Assistance', 'Pharmacy', 'Lab Technician', 'Dentistry', 'Veterinary', 'Animal Grooming', 'Animal Training', 'Dog Breeding', 'Cat Breeding', 'Horse Training', 'Horse Grooming', 'Stable Management', 'Farm Work', 'Agriculture', 'Beekeeping', 'Fishing', 'Hunting', 'Wildlife Management', 'Forestry', 'Park Ranger', 'Game Warden', 'Tourism', 'Travel Planning', 'Ticketing', 'Visa Assistance', 'Language Teaching', 'Music Teaching', 'Art Teaching', 'Science Tutoring', 'Math Tutoring', 'Exam Coaching', 'University Applications', 'Scholarship Applications', 'Resume Writing', 'Career Coaching', 'Life Coaching', 'Business Consulting', 'Startup Mentoring', 'Investment Advice', 'Financial Planning', 'Tax Consulting', 'Insurance Advice', 'Estate Planning', 'Funeral Services', 'Wedding Planning', 'Event Hosting', 'MC', 'Public Speaking', 'Voice Over', 'Acting', 'Modeling', 'Casting', 'Stunt Work', 'Set Design', 'Lighting', 'Sound Engineering', 'Stage Management', 'Production Assistance', 'Directing', 'Script Writing', 'Editing', 'Proofreading', 'Publishing', 'Printing', 'Distribution', 'Courier', 'Logistics', 'Supply Chain', 'Procurement', 'Quality Control', 'Inspection', 'Auditing', 'Compliance', 'Risk Management', 'Project Management', 'Scrum Master', 'Agile Coaching', 'Product Management', 'Business Analysis', 'Market Research', 'Branding', 'Advertising', 'PR', 'Media Buying', 'Influencer Marketing', 'SEO', 'SEM', 'Content Creation', 'Blogging', 'Podcasting', 'Vlogging', 'YouTube Management', 'Twitch Streaming', 'eSports Coaching', 'Game Testing', 'Game Development', 'Animation', '3D Modeling', '2D Art', 'Illustration', 'Cartooning', 'Comics', 'Storyboarding', 'Voice Acting', 'Sound Design', 'Music Production', 'Songwriting', 'Composition', 'Arranging', 'Conducting', 'Orchestration', 'Choir Direction', 'Band Management', 'Tour Management', 'Merchandising', 'Ticket Sales', 'Fan Engagement', 'Community Management', 'Forum Moderation', 'Discord Management', 'Telegram Management', 'WhatsApp Group Management', 'Slack Management', 'Microsoft Teams Management', 'Zoom Hosting', 'Webinar Hosting', 'Online Course Creation', 'eLearning Development', 'Instructional Design', 'Curriculum Development', 'Lesson Planning', 'Exam Setting', 'Grading', 'Assessment', 'Student Counseling', 'Parent Counseling', 'Special Needs Education', 'Speech Therapy', 'Occupational Therapy', 'Physical Therapy', 'Rehabilitation', 'Sports Coaching', 'Athlete Management', 'Scouting', 'Talent Management', 'Casting', 'Audition Coaching', 'Portfolio Development', 'Showreel Editing', 'Demo Reel Production', 'Photography Editing', 'Photo Retouching', 'Video Editing', 'Color Grading', 'Motion Graphics', 'Visual Effects', 'CGI', 'SFX', 'VFX', 'Sound Mixing', 'Mastering', 'Audio Restoration', 'Noise Reduction', 'Podcast Editing', 'Audiobook Production', 'Transcription', 'Translation', 'Subtitling', 'Captioning', 'Dubbing', 'Localization', 'Internationalization', 'Export Consulting', 'Import Consulting', 'Customs Brokerage', 'Freight Forwarding', 'Shipping', 'Maritime Services', 'Port Services', 'Harbor Management', 'Dock Work', 'Stevedoring', 'Cargo Handling', 'Container Management', 'Warehouse Management', 'Inventory Control', 'Stock Taking', 'Order Fulfillment', 'Pick and Pack', 'Delivery Management', 'Route Planning', 'Fleet Management', 'Driver Management', 'Vehicle Maintenance', 'Tyre Fitting', 'Wheel Alignment', 'Panel Beating', 'Spray Painting', 'Auto Detailing', 'Car Wrapping', 'Window Tinting', 'Alarm Installation', 'Tracker Installation', 'Fleet Tracking', 'Telematics', 'Insurance Claims', 'Accident Management', 'Breakdown Assistance', 'Roadside Assistance', 'Towing', 'Recovery', 'Salvage', 'Auction Services', 'Valuation', 'Appraisal', 'Estate Sales', 'Liquidation', 'Bankruptcy Services', 'Debt Collection', 'Credit Control', 'Loan Processing', 'Mortgage Broking', 'Real Estate Broking', 'Property Valuation', 'Surveying', 'Landscaping', 'Horticulture', 'Arboriculture', 'Tree Surgery', 'Tree Felling', 'Stump Removal', 'Garden Design', 'Garden Maintenance', 'Irrigation', 'Water Features', 'Pond Maintenance', 'Aquarium Maintenance', 'Pet Sitting', 'Dog Walking', 'Cat Sitting', 'Bird Sitting', 'Fish Feeding', 'Reptile Care', 'Exotic Pet Care', 'Pet Taxi', 'Pet Boarding', 'Pet Grooming', 'Pet Training', 'Pet Photography', 'Pet Portraits', 'Pet Art', 'Pet Memorials', 'Pet Burial', 'Pet Cremation', 'Pet Insurance', 'Pet Nutrition', 'Pet Supplies', 'Pet Accessories', 'Pet Toys', 'Pet Clothing', 'Pet Furniture', 'Pet Bedding', 'Pet Carriers', 'Pet Travel', 'Pet Relocation', 'Pet Adoption', 'Pet Rescue', 'Pet Fostering', 'Pet Rehoming', 'Pet Welfare', 'Pet Advocacy', 'Pet Fundraising', 'Pet Volunteering', 'Pet Events', 'Pet Shows', 'Pet Competitions', 'Pet Awards', 'Pet Charities', 'Pet Organizations', 'Pet Clubs', 'Pet Societies', 'Pet Forums', 'Pet Blogs', 'Pet Magazines', 'Pet News', 'Pet TV', 'Pet Radio', 'Pet Podcasts', 'Pet Videos', 'Pet Photos', 'Pet Stories', 'Pet Advice', 'Pet Tips', 'Pet Guides', 'Pet Books', 'Pet Courses', 'Pet Training', 'Pet Certification', 'Pet Licensing', 'Pet Registration', 'Pet Microchipping', 'Pet Vaccination', 'Pet Health Checks', 'Pet Surgery', 'Pet Dentistry', 'Pet Orthopedics', 'Pet Oncology', 'Pet Dermatology', 'Pet Cardiology', 'Pet Neurology', 'Pet Ophthalmology', 'Pet Radiology', 'Pet Pathology', 'Pet Rehabilitation', 'Pet Physiotherapy', 'Pet Hydrotherapy', 'Pet Acupuncture', 'Pet Chiropractic', 'Pet Homeopathy', 'Pet Herbalism', 'Pet Nutritionist', 'Pet Behaviorist', 'Pet Trainer', 'Pet Sitter', 'Pet Walker', 'Pet Groomer', 'Pet Boarder', 'Pet Breeder', 'Pet Fosterer', 'Pet Rescuer', 'Pet Advocate', 'Pet Volunteer', 'Pet Fundraiser', 'Pet Event Organizer', 'Pet Show Judge', 'Pet Competition Judge', 'Pet Award Judge', 'Pet Charity Worker', 'Pet Organization Worker', 'Pet Club Member', 'Pet Society Member', 'Pet Forum Moderator', 'Pet Blog Writer', 'Pet Magazine Writer', 'Pet News Reporter', 'Pet TV Presenter', 'Pet Radio Presenter', 'Pet Podcast Host', 'Pet Video Creator', 'Pet Photographer', 'Pet Portrait Artist', 'Pet Story Writer', 'Pet Advice Columnist', 'Pet Tips Writer', 'Pet Guide Writer', 'Pet Book Author', 'Pet Course Creator'
   ]));
 
+  // 1. Add state for edit mode and unsaved changes
+  const [editMode, setEditMode] = useState(false);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+
+  // 2. Add state for social links and public/private toggles
+  const [socialLinks, setSocialLinks] = useState({ linkedin: '', twitter: '', website: '' });
+  const [publicFields, setPublicFields] = useState({ bio: true, skills: true, certificates: true });
+
+  // 3. Add profile completion calculation
+  const getProfileCompletion = () => {
+    let completed = 0;
+    let total = 6; // avatar, name, username, bio, skills, verification
+    if (avatarUrl) completed++;
+    if (firstName && lastName) completed++;
+    if (username) completed++;
+    if (bio) completed++;
+    if (skills.length > 0) completed++;
+    if (viewedProfile?.verification_status === 'verified') completed++;
+    return Math.round((completed / total) * 100);
+  };
+
+  // 4. Add lock logic for verification/docs
+  const isDocLocked = (type: 'verification' | 'certificate') => type === 'verification';
+
+  // 5. Add edit/save/cancel logic
+  const handleEdit = () => setEditMode(true);
+  const handleCancel = () => {
+    setEditMode(false);
+    setUnsavedChanges(false);
+    // Optionally reset fields to original values
+  };
+  const handleSave = async () => {
+    await handleUpdateProfile();
+    setEditMode(false);
+    setUnsavedChanges(false);
+  };
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -413,18 +450,28 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)] py-12">
       <div className="container-custom max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {isOwnProfile ? 'Edit Profile' : `${firstName} ${lastName}'s Profile`}
-          </h1>
-          <p className="text-muted-foreground">
-            {isOwnProfile 
-              ? 'Update your personal information and profile' 
-              : `View ${firstName}'s profile and work history`
-            }
-          </p>
+        {/* Profile Completion Bar */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Profile Completion</span>
+            <span className="text-xs text-muted-foreground">{getProfileCompletion()}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+            <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${getProfileCompletion()}%` }}></div>
+          </div>
         </div>
-        
+        {/* Edit/View Mode Toggle */}
+        {isOwnProfile && !editMode && (
+          <div className="flex justify-end mb-4">
+            <Button onClick={handleEdit} variant="outline">Edit Profile</Button>
+          </div>
+        )}
+        {isOwnProfile && editMode && (
+          <div className="flex justify-end mb-4 gap-2">
+            <Button onClick={handleSave} disabled={isUpdating}>{isUpdating ? 'Saving...' : 'Save'}</Button>
+            <Button onClick={handleCancel} variant="outline">Cancel</Button>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
