@@ -1,201 +1,160 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Play, Star, ShieldCheck } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-
-const trustedByLogos = [
-  'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg',
-  'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
-];
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const [liveUsers, setLiveUsers] = useState(1200);
-  const [parallax, setParallax] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [liveUsers, setLiveUsers] = useState(1243);
+  const containerRef = useRef(null);
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 500], [0, 200]);
 
   // Animate live user counter
   useEffect(() => {
     const interval = setInterval(() => {
       setLiveUsers((prev) => prev + Math.floor(Math.random() * 3 - 1));
-    }, 2000);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
-  // Parallax effect for worker card
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
-      const y = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
-      setParallax({ x, y });
-    };
-    const card = cardRef.current;
-    if (card) {
-      card.addEventListener('mousemove', handleMouseMove);
-      card.addEventListener('mouseleave', () => setParallax({ x: 0, y: 0 }));
-    }
-    return () => {
-      if (card) {
-        card.removeEventListener('mousemove', handleMouseMove);
-        card.removeEventListener('mouseleave', () => setParallax({ x: 0, y: 0 }));
-      }
-    };
-  }, []);
-
   return (
-    <section className="relative bg-gradient-to-br from-white to-purple-50 dark:from-[#18122b] dark:to-gigstr-purple/10 pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
-      {/* Animated SVG Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <svg width="100%" height="100%" viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute top-0 left-0 w-full h-full animate-pulse-slow">
-          <defs>
-            <radialGradient id="bg1" cx="50%" cy="50%" r="80%" fx="50%" fy="50%" gradientTransform="rotate(20)">
-              <stop offset="0%" stopColor="#a259d9" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-            </radialGradient>
-            <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#6d28d9" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#a259d9" stopOpacity="0.08" />
-            </linearGradient>
-          </defs>
-          <ellipse cx="900" cy="200" rx="600" ry="220" fill="url(#bg1)" />
-          <ellipse cx="400" cy="500" rx="400" ry="120" fill="url(#bg2)" />
-        </svg>
-        {/* Floating shapes */}
-        <svg className="absolute left-1/4 top-10 animate-float-slow" width="120" height="120" viewBox="0 0 120 120" fill="none">
-          <circle cx="60" cy="60" r="60" fill="#a259d9" fillOpacity="0.08" />
-        </svg>
-        <svg className="absolute right-10 bottom-10 animate-float-slower" width="80" height="80" viewBox="0 0 80 80" fill="none">
-          <rect width="80" height="80" rx="24" fill="#6d28d9" fillOpacity="0.07" />
-        </svg>
-      </div>
-      <div className="container-custom relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight heading-gradient">
-              Find Workers When You Need Them
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Connect with skilled plumbers, electricians, domestic workers and more in South Africa. Get your problems fixed fast.
-            </p>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/80 dark:bg-gigstr-purple/20 shadow text-gigstr-purple font-semibold text-base animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-ping"></span>
-                {liveUsers.toLocaleString()} users online now
-              </span>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700 dark:text-gray-200">Verified local workers you can trust</span>
+    <section ref={containerRef} className="relative min-h-[95vh] flex items-center justify-center overflow-hidden pt-20">
+      
+      {/* Background Elements */}
+      <div className="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background via-background/95 to-background" />
+
+      <div className="container-custom relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Left Content */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-8 text-center lg:text-left"
+          >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-none bg-primary/10 border border-primary/20 text-sm font-medium text-primary shadow-glow mb-2">
+                 <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                 </span>
+                 {liveUsers.toLocaleString()} locals active now
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700 dark:text-gray-200">Same-day service for emergencies</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="text-gigstr-purple h-5 w-5" />
-                <span className="text-gray-700 dark:text-gray-200">Affordable rates with no hidden fees</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button 
-                variant="glow"
-                className="text-lg h-12 px-8 animate-bounce-once"
-                onClick={() => navigate('/auth')}
-              >
-                Find Workers Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-gigstr-purple text-gigstr-purple hover:bg-gigstr-purple/10 text-lg h-12"
-                onClick={() => navigate('/auth?tab=signup')}
-              >
-                Offer Your Services
-              </Button>
-            </div>
-            {/* Trusted by logo strip */}
-            <div className="mt-8">
-              <span className="block text-gray-400 text-xs mb-2">Trusted by teams at</span>
-              <div className="flex gap-6 items-center opacity-80">
-                {trustedByLogos.map((logo, i) => (
-                  <img key={i} src={logo} alt="Trusted company logo" className="h-7 grayscale hover:grayscale-0 transition duration-300" />
-                ))}
-              </div>
-            </div>
-          </div>
-          {/* Worker card with parallax/floating effect */}
-          <div className="relative flex justify-center items-center">
-            <div
-              ref={cardRef}
-              style={{
-                transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0) scale(1.04)`,
-                transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',
-                boxShadow: '0 8px 32px 0 rgba(80,0,120,0.15), 0 0 32px 8px #a259d9',
-              }}
-              className="bg-glass p-6 rounded-2xl shadow-glass border border-gigstr-purple/20 animate-float backdrop-blur-md hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer"
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-r from-gigstr-purple to-gigstr-blue flex items-center justify-center text-white font-bold text-lg">SM</div>
-                <div>
-                  <h3 className="font-semibold">Sipho Mabaso</h3>
-                  <p className="text-sm text-gray-500">Plumber</p>
-                </div>
-                <div className="ml-auto flex items-center">
-                  <span className="font-bold text-gigstr-purple">R350</span>
-                  <span className="text-gray-500 text-sm">/hr</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-6">
-                <span className="bg-gray-100 px-3 py-1 rounded-full text-sm">Plumbing</span>
-                <span className="bg-gray-100 px-3 py-1 rounded-full text-sm">Maintenance</span>
-                <span className="bg-gray-100 px-3 py-1 rounded-full text-sm">Emergency</span>
-              </div>
-              <p className="text-gray-600 mb-6 text-sm">
-                "I've been helping families in Johannesburg with their plumbing emergencies for over 10 years. Available 24/7 for urgent repairs."
+
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-heading leading-tight tracking-tight">
+                  South Africa's <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">#1 Marketplace</span> <br />
+                  <span className="text-3xl sm:text-4xl md:text-6xl text-muted-foreground">for skilled pros.</span>
+              </h1>
+              
+              <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed px-4 md:px-0">
+                  From Sandton to Sea Point, find verified local talent for any job. Secure payments in Rands, ID checked professionals, and zero hassle.
               </p>
-              <Button className="w-full bg-gradient-to-r from-gigstr-purple to-gigstr-blue">
-                Hire Sipho
-              </Button>
-            </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start px-4 md:px-0">
+                  <Button size="xl" variant="glow" onClick={() => navigate('/create-gig')} className="w-full sm:w-auto text-lg h-14 rounded-2xl bg-primary hover:bg-primary/90">
+                    Find Talent <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                  <Button size="xl" variant="outline" onClick={() => navigate('/gigs')} className="w-full sm:w-auto text-lg h-14 rounded-2xl border-white/10 hover:bg-white/5">
+                    Find Work
+                  </Button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 pt-4 text-sm font-medium text-muted-foreground px-4 md:px-0">
+                  <div className="flex items-center gap-2">
+                      <ShieldCheck className="text-green-500" size={18} /> ID Verified
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Star className="text-yellow-400 fill-yellow-400" size={18} /> 4.8/5 Avg Rating
+                  </div>
+                  <div className="flex items-center gap-2">
+                       <span className="font-bold text-foreground">50k+</span> Jobs Done
+                  </div>
+              </div>
+
+              {/* Mobile Visual - Single Card showcasing a profile */}
+              <motion.div 
+                 initial={{ opacity: 0, y: 30 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ delay: 0.4, duration: 0.6 }}
+                 className="w-full mt-12 lg:hidden flex justify-center pb-8"
+              >
+                  <div className="relative w-full max-w-sm glass-card p-4 rounded-3xl z-20 border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl skew-y-3">
+                     <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-primary/50 to-purple-600/50 blur opacity-30"></div>
+                     <div className="relative h-48 mb-4 rounded-2xl overflow-hidden bg-muted">
+                        <img src="https://images.unsplash.com/photo-1531384441138-2736e62e0919?q=80&w=1000&auto=format&fit=crop" alt="Local Developer" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">
+                            <Star size={10} className="fill-yellow-400 text-yellow-400" /> 5.0
+                        </div>
+                     </div>
+                     <div className="relative">
+                         <h4 className="font-bold text-lg text-white">Thabo M.</h4>
+                         <p className="text-sm text-muted-foreground mb-2">Senior React Developer</p>
+                         <div className="flex justify-between items-center">
+                            <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Cape Town</span>
+                            <span className="font-bold text-white">R 650/hr</span>
+                         </div>
+                     </div>
+                 </div>
+              </motion.div>
+          </motion.div>
+
+          {/* Right Visuals - Local Context Collage */}
+          <div className="relative h-[600px] hidden lg:block perspective-1000">
+             
+             {/* Card 1: The Tech Pro */}
+             <motion.div 
+               style={{ y: y1 }}
+               className="absolute top-10 right-10 w-72 glass-card p-4 rounded-3xl z-20 border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl"
+             >
+                 <div className="relative h-48 mb-4 rounded-2xl overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1531384441138-2736e62e0919?q=80&w=1000&auto=format&fit=crop" alt="Local Developer" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full text-xs font-bold text-white flex items-center gap-1">
+                        <Star size={10} className="fill-yellow-400 text-yellow-400" /> 5.0
+                    </div>
+                 </div>
+                 <div>
+                     <h4 className="font-bold text-lg text-white">Thabo M.</h4>
+                     <p className="text-sm text-muted-foreground mb-2">Senior React Developer</p>
+                     <div className="flex justify-between items-center">
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Cape Town</span>
+                        <span className="font-bold text-white">R 650/hr</span>
+                     </div>
+                 </div>
+             </motion.div>
+
+             {/* Card 2: The Creative - Offset */}
+             <motion.div 
+               className="absolute bottom-20 left-10 w-72 glass-card p-4 rounded-3xl z-10 border border-white/10 bg-black/60 backdrop-blur-xl"
+               initial={{ y: 100, opacity: 0 }}
+               animate={{ y: 0, opacity: 1 }}
+               transition={{ delay: 0.3, duration: 0.8 }}
+             >
+                 <div className="flex items-center gap-3 mb-3">
+                     <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+                        <img src="https://images.unsplash.com/photo-1589156280159-27698a70f29e?q=80&w=1000&auto=format&fit=crop" alt="User" className="w-full h-full object-cover" />
+                     </div>
+                     <div>
+                         <div className="font-bold text-white text-sm">Lerato K.</div>
+                         <div className="text-xs text-muted-foreground">Graphic Designer</div>
+                     </div>
+                 </div>
+                 <div className="space-y-2 mb-3">
+                    <div className="bg-white/5 p-2 rounded-lg flex items-center gap-3">
+                        <div className="p-1.5 bg-green-500/20 rounded-md text-green-400"><CheckCircle size={12} /></div>
+                        <div className="text-xs text-gray-300">Logo Design for Startup</div>
+                        <div className="ml-auto font-bold text-white text-xs">R 3.5k</div>
+                    </div>
+                 </div>
+                 <Button size="sm" className="w-full rounded-xl bg-white/10 hover:bg-white/20 h-9 text-xs">View Profile</Button>
+             </motion.div>
+             
+             {/* Floating Elements */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/20 blur-[100px] rounded-full -z-10 animate-pulse" />
           </div>
-        </div>
       </div>
-      {/* Animations */}
-      <style>{`
-        .animate-float-slow {
-          animation: float 7s ease-in-out infinite alternate;
-        }
-        .animate-float-slower {
-          animation: float 12s ease-in-out infinite alternate;
-        }
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          100% { transform: translateY(24px); }
-        }
-        .animate-bounce-once {
-          animation: bounceOnce 0.8s cubic-bezier(.4,2,.3,1) 1;
-        }
-        @keyframes bounceOnce {
-          0% { transform: scale(1); }
-          30% { transform: scale(1.12); }
-          60% { transform: scale(0.96); }
-          100% { transform: scale(1); }
-        }
-        .animate-pulse-slow {
-          animation: pulseSlow 6s ease-in-out infinite alternate;
-        }
-        @keyframes pulseSlow {
-          0% { opacity: 0.9; }
-          100% { opacity: 1; }
-        }
-      `}</style>
     </section>
   );
 };

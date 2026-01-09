@@ -258,6 +258,11 @@ export type Database = {
           skills: string[] | null
           updated_at: string | null
           username: string | null
+          verification_status: string | null
+          role: string | null
+          portfolio_url: string | null
+          linkedin_url: string | null
+          onboarding_completed: boolean | null
         }
         Insert: {
           avatar_url?: string | null
@@ -271,6 +276,11 @@ export type Database = {
           skills?: string[] | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          role?: string | null
+          portfolio_url?: string | null
+          linkedin_url?: string | null
+          onboarding_completed?: boolean | null
         }
         Update: {
           avatar_url?: string | null
@@ -284,6 +294,11 @@ export type Database = {
           skills?: string[] | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          role?: string | null
+          portfolio_url?: string | null
+          linkedin_url?: string | null
+          onboarding_completed?: boolean | null
         }
         Relationships: []
       }

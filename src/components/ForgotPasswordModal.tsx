@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -14,13 +13,13 @@ import { Label } from '@/components/ui/label';
 import { Mail } from 'lucide-react';
 
 interface ForgotPasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
 }) => {
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -44,17 +43,14 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
   const handleClose = () => {
     setEmail('');
     setEmailSent(false);
-    onClose();
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl text-white">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-500" />
-            <DialogTitle>Reset Your Password</DialogTitle>
-          </div>
+          <DialogTitle>Reset Password</DialogTitle>
           <DialogDescription>
             {emailSent 
               ? "We've sent you a password reset link. Please check your email."

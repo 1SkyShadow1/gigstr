@@ -120,10 +120,10 @@ const Settings = () => {
       <h1 className="text-3xl font-bold mb-6">Settings</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy & Security</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto no-scrollbar h-auto py-2 bg-transparent gap-2">
+          <TabsTrigger value="account" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=active]:border-primary/20 bg-muted/50">Account</TabsTrigger>
+          <TabsTrigger value="notifications" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=active]:border-primary/20 bg-muted/50">Notifications</TabsTrigger>
+          <TabsTrigger value="privacy" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-full px-4 border border-transparent data-[state=active]:border-primary/20 bg-muted/50">Privacy & Security</TabsTrigger>
         </TabsList>
         
         <TabsContent value="account" className="space-y-4">

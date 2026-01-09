@@ -1,28 +1,52 @@
 import React from 'react';
+import { motion } from "framer-motion";
 
 // Modern dual-ring loader inspired by uiverse.io, themed for gigstr
-const Loader = () => (
-  <div className="flex flex-col items-center justify-center" role="status" aria-live="polite">
-    <span className="sr-only">Loading...</span>
-    <span className="gigstr-loader"></span>
-    <style>{`
-      .gigstr-loader {
-        display: inline-block;
-        width: 48px;
-        height: 48px;
-        border: 4px solid rgba(128, 90, 213, 0.15); /* gigstr-purple/20 */
-        border-top: 4px solid #805ad5; /* gigstr-purple */
-        border-right: 4px solid #3b82f6; /* gigstr-blue */
-        border-radius: 50%;
-        animation: gigstr-spin 1s linear infinite;
-        box-shadow: 0 2px 16px 0 rgba(128,90,213,0.10);
-      }
-      @keyframes gigstr-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `}</style>
-  </div>
-);
+const Loader = () => {
+    return (
+        <div className="flex items-center justify-center p-8 space-x-2" role="status" aria-live="polite">
+            <span className="sr-only">Loading...</span>
+            <motion.div
+                className="w-4 h-4 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                animate={{
+                    y: [0, -10, 0],
+                    opacity: [1, 0.5, 1],
+                }}
+                transition={{
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0
+                }}
+            />
+            <motion.div
+                className="w-4 h-4 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                animate={{
+                    y: [0, -10, 0],
+                    opacity: [1, 0.5, 1],
+                }}
+                transition={{
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.1
+                }}
+            />
+            <motion.div
+                className="w-4 h-4 bg-primary rounded-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                animate={{
+                    y: [0, -10, 0],
+                    opacity: [1, 0.5, 1],
+                }}
+                transition={{
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.2
+                }}
+            />
+        </div>
+    );
+};
 
-export default Loader; 
+export default Loader;

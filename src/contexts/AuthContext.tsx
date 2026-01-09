@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,6 +10,8 @@ type AuthContextType = {
   isLoading: boolean;
   reauthenticatedAt: Date | null;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithProvider: (provider: Provider) => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
   signOut: () => Promise<void>;
   changeEmail: (newEmail: string, password: string) => Promise<void>;
@@ -97,6 +98,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       toast({
         title: "Error signing in",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithProvider = async (provider: Provider) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error signing in",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithMagicLink = async (email: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Check your email",
+        description: "We sent you a magic link to sign in.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error requesting magic link",
         description: error.message,
         variant: "destructive",
       });
@@ -309,6 +361,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         reauthenticate,
         isReauthenticationRequired,
         clearReauthentication,
+        signInWithProvider,
+        signInWithMagicLink,
       }}
     >
       {children}

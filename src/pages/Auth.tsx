@@ -1,19 +1,25 @@
-
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import { motion } from 'framer-motion';
+import { Sparkles, Mail, Chrome, Linkedin } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" })
+});
+
+const magicLinkSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
 });
 
 const signupSchema = z.object({
@@ -21,19 +27,31 @@ const signupSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(2, { message: "First name is required" }),
   lastName: z.string().min(2, { message: "Last name is required" }),
-  username: z.string().min(3, { message: "Username must be at least 3 characters" })
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+  accountType: z.enum(['client', 'pro', 'both']).optional().default('pro'),
+  skills: z.string().max(200).optional(),
+  location: z.string().max(120).optional(),
+  experience: z.enum(['junior', 'mid', 'senior']).optional(),
 });
 
 const Auth = () => {
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, signInWithProvider, signInWithMagicLink, user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const navigate = useNavigate();
   
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
+    },
+  });
+
+  const magicLinkForm = useForm<z.infer<typeof magicLinkSchema>>({
+    resolver: zodResolver(magicLinkSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -45,6 +63,10 @@ const Auth = () => {
       firstName: "",
       lastName: "",
       username: "",
+      accountType: 'pro',
+      skills: '',
+      location: '',
+      experience: undefined,
     },
   });
 
@@ -56,14 +78,29 @@ const Auth = () => {
     }
   };
 
+  const handleMagicLink = async (values: z.infer<typeof magicLinkSchema>) => {
+    try {
+      await signInWithMagicLink(values.email);
+    } catch (error) {
+      console.error("Magic Link error:", error);
+    }
+  };
+
   const handleSignup = async (values: z.infer<typeof signupSchema>) => {
     try {
       const userData = {
         first_name: values.firstName,
         last_name: values.lastName,
         username: values.username,
+        account_type: values.accountType || 'pro',
+        skills: values.skills
+          ? values.skills.split(',').map(s => s.trim()).filter(Boolean)
+          : [],
+        location: values.location,
+        experience_level: values.experience,
       };
       await signUp(values.email, values.password, userData);
+      // Don't auto-redirect, wait for auth state change or instruct user to check email
       setActiveTab("login");
     } catch (error) {
       console.error("Signup error:", error);
@@ -72,35 +109,58 @@ const Auth = () => {
 
   // Redirect if user is already logged in
   if (user) {
+    if (user.role === 'pending' || !user.user_metadata?.onboarding_completed) {
+         return <Navigate to="/onboarding" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black selection:bg-primary/30 text-foreground">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[#0a0a0a]">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[128px] animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[128px] animate-pulse-slow" />
+        <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-purple-500/10 rounded-full blur-[96px]" />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="w-full max-w-md relative z-10 mx-4"
+      >
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold heading-gradient mb-2">Welcome to Gigstr</h2>
-          <p className="text-gray-600">Find work, get paid, grow your career</p>
+          <div className="flex justify-center mb-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-tr from-primary/20 to-blue-500/20 border border-white/10 shadow-glow">
+              <Sparkles className="w-8 h-8 text-primary" />
+            </div>
+          </div>
+          <h2 className="text-4xl font-bold font-heading text-transparent bg-clip-text bg-gradient-to-r from-white to-white/60 mb-2">Gigstr</h2>
+          <p className="text-muted-foreground">The future of work is here.</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-100">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        <div className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-8 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3 mb-8 bg-white/5 border border-white/5">
+              <TabsTrigger value="login" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white">Login</TabsTrigger>
+              <TabsTrigger value="magic-link" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white">Magic Link</TabsTrigger>
+              <TabsTrigger value="signup" className="data-[state=active]:bg-primary/20 data-[state=active]:text-white">Sign Up</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="login">
+            <TabsContent value="login" className="mt-0 focus-visible:ring-0">
               <Form {...loginForm}>
-                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-5">
                   <FormField
                     control={loginForm.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-gray-300">Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="you@example.com" {...field} />
+                          <Input placeholder="you@example.com" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -112,9 +172,9 @@ const Auth = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel className="text-gray-300">Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input type="password" placeholder="••••••••" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -123,17 +183,17 @@ const Auth = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full h-11 text-base shadow-glow-sm hover:shadow-glow transition-all duration-300"
                     disabled={isLoading}
                   >
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>
                   
-                  <div className="text-center">
+                  <div className="text-center pt-2">
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-gigstr-purple hover:underline"
+                      className="text-sm text-primary hover:text-primary/80 transition-colors"
                     >
                       Forgot your password?
                     </button>
@@ -141,33 +201,65 @@ const Auth = () => {
                 </form>
               </Form>
             </TabsContent>
+
+            <TabsContent value="magic-link" className="mt-0 focus-visible:ring-0">
+              <Form {...magicLinkForm}>
+                <form onSubmit={magicLinkForm.handleSubmit(handleMagicLink)} className="space-y-5">
+                  <div className="text-center mb-4">
+                    <div className="p-3 bg-primary/10 rounded-full w-fit mx-auto mb-3">
+                        <Mail className="w-6 h-6 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">We'll send you a magic link to sign in instantly.</p>
+                  </div>
+                  <FormField
+                    control={magicLinkForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="you@example.com" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 text-base shadow-glow-sm hover:shadow-glow transition-all duration-300"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Sending Link..." : "Send Magic Link"}
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
             
-            <TabsContent value="signup">
+            <TabsContent value="signup" className="mt-0 focus-visible:ring-0">
               <Form {...signupForm}>
-                <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={signupForm.control}
                       name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>First Name</FormLabel>
+                          <FormLabel className="text-gray-300">First Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="John" {...field} />
+                            <Input placeholder="John" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
                     <FormField
                       control={signupForm.control}
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Last Name</FormLabel>
+                          <FormLabel className="text-gray-300">Last Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Doe" {...field} />
+                            <Input placeholder="Doe" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -180,9 +272,9 @@ const Auth = () => {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Username</FormLabel>
+                        <FormLabel className="text-gray-300">Username</FormLabel>
                         <FormControl>
-                          <Input placeholder="johndoe" {...field} />
+                          <Input placeholder="johndoe" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -194,9 +286,9 @@ const Auth = () => {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-gray-300">Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="you@example.com" {...field} />
+                          <Input placeholder="you@example.com" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -208,37 +300,121 @@ const Auth = () => {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel className="text-gray-300">Password</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
+                          <Input type="password" placeholder="••••••••" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={signupForm.control}
+                      name="accountType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Account Type</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="bg-white/5 border-white/10 focus:border-primary/50 text-white">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pro">Provider</SelectItem>
+                              <SelectItem value="client">Client</SelectItem>
+                              <SelectItem value="both">Both</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={signupForm.control}
+                      name="experience"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-300">Experience</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="bg-white/5 border-white/10 focus:border-primary/50 text-white">
+                              <SelectValue placeholder="Pick level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="junior">Junior</SelectItem>
+                              <SelectItem value="mid">Mid</SelectItem>
+                              <SelectItem value="senior">Senior</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={signupForm.control}
+                    name="skills"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">Top skills (comma separated)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="React, Plumbing, Copywriting" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={signupForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-300">City / Region (optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Johannesburg, Gauteng" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full h-11 text-base shadow-glow-sm hover:shadow-glow transition-all duration-300" 
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                    {isLoading ? "Creating Account..." : "Sign Up"}
                   </Button>
                 </form>
               </Form>
             </TabsContent>
           </Tabs>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-black/40 px-2 text-muted-foreground backdrop-blur-xl">Or continue with</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Button variant="outline" onClick={() => signInWithProvider('google')} className="bg-white/5 border-white/10 hover:bg-white/10 hover:text-white" disabled={isLoading}>
+                <Chrome className="mr-2 h-4 w-4" /> Google
+              </Button>
+              <Button variant="outline" onClick={() => signInWithProvider('linkedin_oidc')} className="bg-white/5 border-white/10 hover:bg-white/10 hover:text-white" disabled={isLoading}>
+                <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
+              </Button>
+            </div>
+          </div>
         </div>
         
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Need help? <a href="mailto:support@gigstr.com" className="text-gigstr-purple hover:underline">Contact Support</a></p>
-        </div>
-      </div>
-      
-      <ForgotPasswordModal 
-        isOpen={showForgotPassword} 
-        onClose={() => setShowForgotPassword(false)} 
-      />
+        <ForgotPasswordModal open={showForgotPassword} onOpenChange={setShowForgotPassword} />
+      </motion.div>
     </div>
   );
 };

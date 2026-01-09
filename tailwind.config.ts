@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -70,7 +69,12 @@ export default {
 					teal: '#14B8A6',
 					pink: '#D946EF',
 					light: '#F5F7FF',
-					dark: '#1A1F2C'
+					dark: '#1A1F2C',
+                    // New Palette
+                    'neon-mint': '#00f2ea',
+                    'electric-indigo': '#6366f1',
+                    'cyber-violet': '#8b5cf6',
+                    'glass-border': 'rgba(255, 255, 255, 0.08)',
 				}
 			},
 			borderRadius: {
@@ -78,6 +82,10 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+            fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+                heading: ['Space Grotesk', 'sans-serif'],
+            },
 			keyframes: {
 				'accordion-down': {
 					from: {
@@ -98,12 +106,24 @@ export default {
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-10px)' }
-				}
+				},
+                'shimmer': {
+                    '0%': { backgroundPosition: '200% 0' },
+                    '100%': { backgroundPosition: '-200% 0' }
+                },
+                'blob': {
+                    '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                    '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                    '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                    '100%': { transform: 'translate(0px, 0px) scale(1)' }
+                }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'float': 'float 6s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite',
+                'shimmer': 'shimmer 8s ease-in-out infinite',
+                'blob': 'blob 7s infinite'
 			},
 			boxShadow: {
 				'glow': '0 0 16px 4px #a259ff88, 0 0 32px 8px #43e6fc44',

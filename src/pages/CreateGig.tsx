@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -10,43 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Upload, Plus, X, AlignLeft, Briefcase, MapPin, Calendar, DollarSign, Tag, Globe, Sparkles } from 'lucide-react';
 import Loader from '@/components/ui/loader';
+import AnimatedPage from '@/components/AnimatedPage';
+import { motion } from 'framer-motion';
 
 const categories = [
-  "Plumbing",
-  "Electrical",
-  "Domestic Work",
-  "Gardening",
-  "Cleaning",
-  "Childcare",
-  "Transportation",
-  "Repairs",
-  "Painting",
-  "Construction",
-  "Security",
-  "IT Support",
-  "Teaching",
-  "Cooking",
-  "Other"
+  "Plumbing", "Electrical", "Domestic Work", "Gardening", "Cleaning", 
+  "Childcare", "Transportation", "Repairs", "Painting", "Construction", 
+  "Security", "IT Support", "Teaching", "Cooking", "Other"
 ];
-
-const locations = [
-  "Johannesburg",
-  "Cape Town",
-  "Durban",
-  "Pretoria",
-  "Port Elizabeth",
-  "Bloemfontein", 
-  "East London",
-  "Polokwane",
-  "Nelspruit",
-  "Kimberley",
-  "Remote",
-  "Other"
-];
-
-const paymentMethods = ['EFT', 'Cash'];
 
 const CreateGig = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -59,6 +32,30 @@ const CreateGig = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState('EFT');
+  
+  // Enhanced form fields
+  const [timeline, setTimeline] = useState({
+    startDate: '',
+    expectedDuration: '',
+    milestones: []
+  });
+  const [budget, setBudget] = useState({
+    type: 'fixed',
+    amount: '',
+    paymentSchedule: 'completion'
+  });
+  const [locationDetails, setLocationDetails] = useState({
+    type: 'remote',
+    city: '',
+    country: 'South Africa'
+  });
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [communicationPrefs, setCommunicationPrefs] = useState({
+    method: 'platform',
+    availability: 'flexible'
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -71,10 +68,22 @@ const CreateGig = () => {
     }
   }, [user, authLoading, navigate, toast]);
 
+  const addTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !category || !price) {
+    if (!title || !description || !category || !budget.amount) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields",
@@ -90,183 +99,215 @@ const CreateGig = () => {
         title,
         description,
         category,
-        price: parseFloat(price),
-        location: location || 'Remote',
+        price: parseFloat(budget.amount),
+        location: locationDetails.type === 'remote' ? 'Remote' : `${locationDetails.city}, ${locationDetails.country}`,
         client_id: user?.id,
         status: 'open',
-        // payment_method is not in the gigs table schema, so we do not send it to Supabase
+        // Additional fields would be mapped to JSONB or specific columns if they exist
       };
       
       const { data, error } = await supabase
         .from('gigs')
         .insert(gigData)
-        .select('id')
+        .select()
         .single();
         
       if (error) throw error;
       
-      toast({
-        title: "Gig posted successfully",
-        description: "Your gig has been posted and is now visible to workers",
-      });
-      
+      toast({ title: "Gig posted!", description: "Your gig is now live." });
       navigate(`/gigs/${data.id}`);
     } catch (error: any) {
-      toast({
-        title: "Error creating gig",
-        description: error.message,
-        variant: "destructive",
-      });
+        console.error(error); 
+        toast({ title: "Error", description: error.message, variant: "destructive", });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
+  if (authLoading) return <div className="h-screen flex items-center justify-center"><Loader /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[var(--color-card)] py-12">
-      <div className="container-custom max-w-3xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Post a New Gig</h1>
-          <p className="text-muted-foreground">Describe the work you need done and find skilled workers</p>
-        </div>
-        
-        <Card>
-          <form onSubmit={handleSubmit}>
-            <CardHeader>
-              <CardTitle>Gig Details</CardTitle>
-              <CardDescription>Provide details about the work you need completed</CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="title" className="mb-2 block">Gig Title*</Label>
-                <Input 
-                  id="title" 
-                  placeholder="E.g., Fix kitchen sink leak"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description" className="mb-2 block">Description*</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Describe the work, requirements, timeline, etc."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  required
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="category" className="mb-2 block">Category*</Label>
-                  <Select
-                    value={category}
-                    onValueChange={setCategory}
-                    required
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="price" className="mb-2 block">Budget (ZAR)*</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">R</span>
-                    <Input 
-                      id="price" 
-                      type="number"
-                      placeholder="Amount in ZAR"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      className="pl-8"
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="location" className="mb-2 block">Location</Label>
-                <Select
-                  value={location}
-                  onValueChange={setLocation}
+    <AnimatedPage>
+        <div className="max-w-4xl mx-auto pb-20">
+            <div className="mb-8 text-center">
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/20 backdrop-blur-md border border-primary/30 mb-4"
                 >
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="Select location or remote" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map(loc => (
-                      <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                    <Sparkles className="w-6 h-6 text-primary" />
+                </motion.div>
+                <h1 className="text-4xl font-bold font-heading mb-2">Create a Gig</h1>
+                <p className="text-muted-foreground">Hire the best talent for your project.</p>
+            </div>
 
-              <div>
-                <Label htmlFor="paymentMethod" className="mb-2 block">Payment Method*</Label>
-                <Select
-                  value={paymentMethod}
-                  onValueChange={setPaymentMethod}
-                  required
-                >
-                  <SelectTrigger id="paymentMethod">
-                    <SelectValue placeholder="Select payment method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map(method => (
-                      <SelectItem key={method} value={method}>{method}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            
-            <CardFooter className="flex justify-between">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => navigate('/gigs')}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Posting...
-                  </>
-                ) : "Post Gig"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
-    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Main Form */}
+                <div className="md:col-span-2 space-y-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="p-6 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl"
+                    >
+                         <div className="space-y-6">
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><AlignLeft className="w-4 h-4 text-primary" /> Title</Label>
+                                <Input 
+                                    placeholder="e.g. Need a plumber for leaky faucet" 
+                                    className="bg-white/5 border-white/10 text-lg h-12"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                />
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-2"><Briefcase className="w-4 h-4 text-primary" /> Category</Label>
+                                <Select value={category} onValueChange={setCategory}>
+                                    <SelectTrigger className="bg-white/5 border-white/10 h-12">
+                                        <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Description</Label>
+                                <Textarea 
+                                    placeholder="Describe your project in detail..." 
+                                    className="bg-white/5 border-white/10 min-h-[150px] resize-none"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                />
+                            </div>
+                         </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                         className="p-6 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl space-y-6"
+                    >
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-400" /> Budget & Timeline</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div className="space-y-2">
+                                <Label>Budget (ZAR)</Label>
+                                <div className="relative">
+                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
+                                    <Input 
+                                        type="number" 
+                                        placeholder="5000" 
+                                        className="pl-8 bg-white/5 border-white/10 h-12"
+                                        value={budget.amount}
+                                        onChange={(e) => setBudget({...budget, amount: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Start Date</Label>
+                                <Input 
+                                    type="date" 
+                                    className="bg-white/5 border-white/10 h-12"
+                                    value={timeline.startDate}
+                                    onChange={(e) => setTimeline({...timeline, startDate: e.target.value})}
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                         className="p-6 rounded-3xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl space-y-6"
+                    >
+                         <h3 className="text-lg font-semibold flex items-center gap-2"><MapPin className="w-5 h-5 text-blue-400" /> Location</h3>
+                         
+                         <div className="grid grid-cols-2 gap-4 mb-4">
+                             <Button 
+                                type="button" 
+                                variant={locationDetails.type === 'remote' ? 'default' : 'outline'}
+                                className={locationDetails.type === 'remote' ? 'border-primary' : 'border-white/10 bg-transparent'}
+                                onClick={() => setLocationDetails({...locationDetails, type: 'remote'})}
+                            >
+                                <Globe className="w-4 h-4 mr-2" /> Remote
+                             </Button>
+                             <Button 
+                                type="button" 
+                                variant={locationDetails.type === 'onsite' ? 'default' : 'outline'}
+                                className={locationDetails.type === 'onsite' ? 'border-primary' : 'border-white/10 bg-transparent'}
+                                onClick={() => setLocationDetails({...locationDetails, type: 'onsite'})}
+                            >
+                                <MapPin className="w-4 h-4 mr-2" /> On-Site
+                             </Button>
+                         </div>
+
+                         {locationDetails.type === 'onsite' && (
+                            <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-2">
+                                    <Label>City</Label>
+                                    <Input 
+                                        placeholder="Cape Town" 
+                                        className="bg-white/5 border-white/10"
+                                        value={locationDetails.city}
+                                        onChange={(e) => setLocationDetails({...locationDetails, city: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                     <Label>Country</Label>
+                                    <Input 
+                                        placeholder="South Africa" 
+                                        className="bg-white/5 border-white/10"
+                                        value={locationDetails.country}
+                                        onChange={(e) => setLocationDetails({...locationDetails, country: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                         )}
+                    </motion.div>
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-6">
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="sticky top-24"
+                    >
+                        <Card className="bg-black/60 backdrop-blur-xl border-white/10 overflow-hidden">
+                            <div className="h-2 bg-gradient-to-r from-primary to-purple-400" />
+                            <CardHeader>
+                                <CardTitle>Pro Tips</CardTitle>
+                                <CardDescription>How to get the best results</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4 text-sm text-muted-foreground">
+                                <p>✨ <strong className="text-white">Be Specific:</strong> Detailed descriptions attract better candidates.</p>
+                                <p>💰 <strong className="text-white">Fair Budget:</strong> Realistic budgets get faster responses.</p>
+                                <p>🏷️ <strong className="text-white">Tags:</strong> Add relevant tags to help people find your gig.</p>
+                            </CardContent>
+                            <CardFooter>
+                                <Button 
+                                    className="w-full shadow-glow" 
+                                    size="lg" 
+                                    onClick={handleSubmit}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : 'Publish Gig'}
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </motion.div>
+                </div>
+            </div>
+        </div>
+    </AnimatedPage>
   );
 };
 

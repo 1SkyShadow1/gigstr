@@ -1,359 +1,522 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, FileText, Gavel } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { 
+    Shield, 
+    FileText, 
+    Gavel, 
+    Lock, 
+    CheckCircle, 
+    AlertCircle, 
+    DollarSign, 
+    Clock, 
+    Briefcase,
+    ChevronRight,
+    ArrowRight,
+    User,
+    AlertTriangle,
+    Upload,
+    CheckSquare,
+    ListChecks,
+    ShieldCheck
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { uploadFileToBucket } from '@/lib/storage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, CheckCircle, FileText as FileIcon, Handshake, Lock, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Paperclip, Send, UserCheck, UserX, MessageCircle, Image as ImageIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import AnimatedPage from '@/components/AnimatedPage';
+
+type Agreement = {
+    id: string;
+    title: string;
+    client: string;
+    amount: number;
+    status: string;
+    milestones?: { id: string | number; name: string; amount?: number; status: string }[];
+    created_at: string;
+};
 
 const TrustLock = () => {
-  const { user, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState('verification');
-  const [step, setStep] = useState(1);
-  const [uploadedDocs, setUploadedDocs] = useState({ id: null, address: null, cert: null });
-  const [status, setStatus] = useState(profile?.verification_status || 'unverified');
+    const { user, profile } = useAuth();
+    const { toast } = useToast();
+    // Default to 'agreements' as it's the main feature, 'verification' can be secondary
+    const [activeTab, setActiveTab] = useState('agreements');
+    const [agreements, setAgreements] = useState<Agreement[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+    const idInputRef = React.useRef<HTMLInputElement>(null);
+    const addressInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Simulate real-time status update (replace with real API logic)
-  React.useEffect(() => {
-    setStatus(profile?.verification_status || 'unverified');
-  }, [profile]);
+    useEffect(() => {
+        if (!user) return;
+        const fetchAgreements = async () => {
+            try {
+                setLoading(true);
+                const { data, error } = await supabase
+                    .from('trustlock_agreements')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
 
-  const handleUpload = (type: 'id' | 'address' | 'cert', file: File) => {
-    setUploadedDocs((prev) => ({ ...prev, [type]: file.name }));
-    // TODO: Upload logic
+                if (error) {
+                    toast({ title: 'Could not load agreements', description: error.message, variant: 'destructive' });
+                    setAgreements([]);
+                    return;
+                }
+                setAgreements((data as Agreement[]) || []);
+            } catch (err: any) {
+                toast({ title: 'Could not load agreements', description: err.message, variant: 'destructive' });
+                setAgreements([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAgreements();
+    }, [user, toast]);
+
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    
+    // Form State
+    const [newTitle, setNewTitle] = useState('');
+    const [newClient, setNewClient] = useState('');
+    const [newAmount, setNewAmount] = useState('');
+
+  const formatCurrency = (val: number) => {
+      return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(val);
   };
 
-  const getStatusBadge = () => {
-    if (status === 'verified') {
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1"><Shield className="h-3 w-3" /> TrustLock Verified</Badge>;
-    }
-    if (status === 'pending') {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 flex items-center gap-1"><Shield className="h-3 w-3" /> Pending Review</Badge>;
-    }
-    return <Badge className="bg-gray-100 text-gray-700 border-gray-200 flex items-center gap-1"><Shield className="h-3 w-3" /> Not Verified</Badge>;
+  const handleCreateAgreement = async () => {
+      if (!user) {
+          toast({ variant: 'destructive', title: 'Login required', description: 'Please sign in to create agreements.' });
+          return;
+      }
+
+      if (!newTitle || !newClient || !newAmount) {
+          toast({ variant: 'destructive', title: 'Missing fields', description: 'Please fill in all details.'});
+          return;
+      }
+
+      const amountValue = parseFloat(newAmount);
+      if (Number.isNaN(amountValue)) {
+          toast({ variant: 'destructive', title: 'Invalid amount', description: 'Enter a valid number.' });
+          return;
+      }
+
+      try {
+          toast({ title: 'Creating agreement', description: 'Saving to TrustLock.' });
+          const { data, error } = await supabase
+              .from('trustlock_agreements')
+              .insert({
+                  user_id: user.id,
+                  title: newTitle,
+                  client: newClient,
+                  amount: amountValue,
+                  status: 'pending_deposit',
+                  milestones: [{ id: '1', name: 'Full Project', amount: amountValue, status: 'locked' }],
+              })
+              .select()
+              .single();
+
+          if (error) throw error;
+
+          setAgreements([data as Agreement, ...agreements]);
+          setIsCreateOpen(false);
+          setNewTitle(''); setNewClient(''); setNewAmount('');
+          toast({ title: 'Agreement created', description: 'Share the link with your client to deposit.' });
+      } catch (err: any) {
+          toast({ title: 'Could not create agreement', description: err.message, variant: 'destructive' });
+      }
   };
 
-  const agreementTemplates = [
-    { label: 'One-Time Repair', value: 'one_time' },
-    { label: 'Recurring Service', value: 'recurring' },
-    { label: 'Project-Based Work', value: 'project' },
-  ];
-  const paymentSchedules = [
-    { label: '100% on Completion', value: 'full' },
-    { label: '50% Upfront, 50% on Completion', value: 'split' },
-    { label: 'Custom', value: 'custom' },
-  ];
-  const paymentMethods = [
-    { label: 'Cash', value: 'cash' },
-    { label: 'EFT', value: 'eft' },
-    { label: 'Other', value: 'other' },
-  ];
-
-  function AgreementForm() {
-    const [step, setStep] = useState(1);
-    const [template, setTemplate] = useState('one_time');
-    const [scope, setScope] = useState('');
-    const [materials, setMaterials] = useState('client');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [cost, setCost] = useState('');
-    const [schedule, setSchedule] = useState('full');
-    const [method, setMethod] = useState('cash');
-    const [review, setReview] = useState(false);
-    const [signed, setSigned] = useState(false);
-    const [signature, setSignature] = useState('');
-    const [timestamp, setTimestamp] = useState('');
-    const [ip, setIp] = useState('');
-
-    // Simulate IP and timestamp
-    React.useEffect(() => {
-      if (signed) {
-        setTimestamp(format(new Date(), 'yyyy-MM-dd HH:mm:ss'));
-        setIp('192.0.2.1'); // TODO: Replace with real IP
+  const getStatusColor = (status: string) => {
+      switch(status) {
+          case 'active': return 'bg-blue-500/10 text-blue-600 border-blue-200';
+          case 'completed': return 'bg-green-500/10 text-green-600 border-green-200';
+          case 'pending_deposit': return 'bg-yellow-500/10 text-yellow-600 border-yellow-200';
+          default: return 'bg-gray-500/10 text-gray-600';
       }
-    }, [signed]);
+  };
 
-    const handleReview = () => setReview(true);
-    const handleSign = () => {
-      setSigned(true);
-      setSignature('I Agree');
-    };
-
-    if (signed) {
-      return (
-        <div className="text-center animate-fade-in">
-          <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-2 animate-bounce" />
-          <div className="text-xl font-bold text-green-700 mb-2">Agreement Signed!</div>
-          <div className="mb-2">Timestamp: <span className="font-mono">{timestamp}</span></div>
-          <div className="mb-4">IP: <span className="font-mono">{ip}</span></div>
-          <div className="mb-4 text-muted-foreground">A PDF copy will be generated and available for download soon.</div>
-          <Button variant="secondary" onClick={() => window.print()}><FileIcon className="mr-2 h-4 w-4" /> Download PDF</Button>
-        </div>
-      );
-    }
-
-    if (review) {
-      return (
-        <div className="animate-fade-in">
-          <div className="mb-4 p-4 border rounded bg-gray-50">
-            <div className="flex items-center gap-2 mb-2"><Lock className="h-4 w-4 text-blue-600" /> <span className="font-semibold">TrustLock Agreement Preview</span></div>
-            <div className="mb-2"><b>Template:</b> {agreementTemplates.find(t => t.value === template)?.label}</div>
-            <div className="mb-2"><b>Scope of Work:</b> {scope}</div>
-            <div className="mb-2"><b>Materials:</b> {materials === 'client' ? 'Client' : 'Worker'}</div>
-            <div className="mb-2"><b>Timeline:</b> {startDate} to {endDate}</div>
-            <div className="mb-2"><b>Payment Terms:</b> R{cost} - {paymentSchedules.find(s => s.value === schedule)?.label} ({paymentMethods.find(m => m.value === method)?.label})</div>
-          </div>
-          <div className="mb-4 text-muted-foreground">Both parties must review and sign this agreement. Your signature will be timestamped and recorded.</div>
-          <Button className="mr-2" variant="outline" onClick={() => setReview(false)}>Edit</Button>
-          <Button onClick={handleSign}><Handshake className="mr-2 h-4 w-4" /> I Agree & Sign</Button>
-        </div>
-      );
-    }
-
-    return (
-      <form className="space-y-6 animate-fade-in" onSubmit={e => { e.preventDefault(); handleReview(); }}>
-        <div>
-          <label className="block font-semibold mb-1">Template</label>
-          <Select value={template} onValueChange={setTemplate}>
-            {agreementTemplates.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </Select>
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Scope of Work</label>
-          <Textarea value={scope} onChange={e => setScope(e.target.value)} placeholder="Describe the tasks to be completed..." required />
-        </div>
-        <div>
-          <label className="block font-semibold mb-1">Materials</label>
-          <div className="flex gap-4">
-            <label><input type="radio" checked={materials === 'client'} onChange={() => setMaterials('client')} /> Client</label>
-            <label><input type="radio" checked={materials === 'worker'} onChange={() => setMaterials('worker')} /> Worker</label>
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="block font-semibold mb-1">Start Date</label>
-            <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
-          </div>
-          <div className="flex-1">
-            <label className="block font-semibold mb-1">End Date</label>
-            <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required />
-          </div>
-        </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="block font-semibold mb-1">Total Cost (R)</label>
-            <Input type="number" value={cost} onChange={e => setCost(e.target.value)} required min={0} />
-          </div>
-          <div className="flex-1">
-            <label className="block font-semibold mb-1">Payment Schedule</label>
-            <Select value={schedule} onValueChange={setSchedule}>
-              {paymentSchedules.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </Select>
-          </div>
-          <div className="flex-1">
-            <label className="block font-semibold mb-1">Payment Method</label>
-            <Select value={method} onValueChange={setMethod}>
-              {paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button type="submit" className="mt-4"><FileIcon className="mr-2 h-4 w-4" /> Review Agreement</Button>
-        </div>
-      </form>
-    );
-  }
-
-  function DisputeChat() {
-    const [messages, setMessages] = useState([
-      { sender: 'worker', text: 'I completed the work as agreed.', time: '09:00', type: 'text' },
-      { sender: 'client', text: 'The faucet is still leaking.', time: '09:01', type: 'text' },
-      { sender: 'admin', text: 'Please upload photos of the work and any relevant messages.', time: '09:02', type: 'text' },
-    ]);
-    const [input, setInput] = useState('');
-    const [attachments, setAttachments] = useState([]);
-    const [resolution, setResolution] = useState('');
-    const [status, setStatus] = useState('open');
-
-    const handleSend = () => {
-      if (input.trim()) {
-        setMessages([...messages, { sender: 'worker', text: input, time: '09:10', type: 'text' }]);
-        setInput('');
+  const handleVerificationUpload = async (file: File, documentType: 'id' | 'address') => {
+      if (!user) {
+          toast({ title: 'Login required', description: 'Please sign in to upload documents.', variant: 'destructive' });
+          return;
       }
-    };
-    const handleAttach = (e) => {
-      if (e.target.files && e.target.files[0]) {
-        setAttachments([...attachments, e.target.files[0].name]);
-        setMessages([...messages, { sender: 'worker', text: e.target.files[0].name, time: '09:11', type: 'file' }]);
-      }
-    };
-    const handleResolution = () => {
-      setResolution('Admin recommends a partial refund and a follow-up visit.');
-      setStatus('resolved');
-    };
 
-    return (
-      <div className="max-w-2xl mx-auto animate-fade-in">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageCircle className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-lg">Dispute Chat</span>
-          <span className={`ml-auto px-2 py-1 rounded text-xs ${status === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{status === 'open' ? 'Open' : 'Resolved'}</span>
-        </div>
-        <div className="bg-gray-50 border rounded p-4 h-72 overflow-y-auto mb-4 flex flex-col gap-2">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.sender === 'worker' ? 'justify-start' : msg.sender === 'client' ? 'justify-end' : 'justify-center'}`}>
-              <div className={`rounded-lg px-3 py-2 max-w-xs shadow-sm ${msg.sender === 'admin' ? 'bg-blue-100 text-blue-900' : msg.sender === 'worker' ? 'bg-green-100 text-green-900' : 'bg-yellow-100 text-yellow-900'}`}>
-                <div className="flex items-center gap-1 mb-1">
-                  {msg.sender === 'worker' && <UserCheck className="h-3 w-3" />}
-                  {msg.sender === 'client' && <UserX className="h-3 w-3" />}
-                  {msg.sender === 'admin' && <Shield className="h-3 w-3" />}
-                  <span className="text-xs font-semibold capitalize">{msg.sender}</span>
-                  <span className="ml-2 text-xs text-gray-400">{msg.time}</span>
-                </div>
-                {msg.type === 'file' ? (
-                  <div className="flex items-center gap-2 text-blue-700"><ImageIcon className="h-4 w-4" /> {msg.text}</div>
-                ) : (
-                  <div>{msg.text}</div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 mb-4">
-          <input type="file" id="attach" className="hidden" onChange={handleAttach} />
-          <label htmlFor="attach" className="cursor-pointer"><Paperclip className="h-5 w-5 text-blue-600" /></label>
-          <input
-            className="flex-1 border rounded px-3 py-2"
-            placeholder="Type your message..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-          />
-          <Button onClick={handleSend} variant="secondary"><Send className="h-4 w-4" /></Button>
-        </div>
-        <div className="mb-4">
-          <div className="font-semibold mb-1">Resolution Tracker</div>
-          <div className="flex items-center gap-2">
-            <div className={`h-2 w-24 rounded-full ${status === 'open' ? 'bg-yellow-400' : 'bg-green-600'} transition-all`} />
-            <div className="text-xs">{status === 'open' ? 'Awaiting Admin Recommendation' : 'Resolved'}</div>
-          </div>
-        </div>
-        {status === 'open' && (
-          <div className="mb-4 text-center">
-            <Button onClick={handleResolution} variant="outline"><Shield className="mr-2 h-4 w-4" /> Admin: Provide Recommendation</Button>
-          </div>
-        )}
-        {resolution && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mt-4 animate-fade-in">
-            <div className="font-semibold mb-1">Admin Recommendation</div>
-            <div>{resolution}</div>
-          </div>
-        )}
-      </div>
-    );
-  }
+      try {
+          setIsUploadingDoc(true);
+          const { url, path } = await uploadFileToBucket({
+              bucket: 'trustlock-docs',
+              file,
+              folder: `${user.id}/${documentType}`
+          });
+
+          const { error } = await supabase.from('trustlock_verifications').insert({
+              user_id: user.id,
+              document_type: documentType === 'id' ? 'id' : 'address',
+              file_path: path,
+              status: 'pending',
+          });
+
+          if (error) throw error;
+          toast({ title: 'Document uploaded', description: 'We will verify within 24-48 hours.' });
+      } catch (err: any) {
+          toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+      } finally {
+          setIsUploadingDoc(false);
+          if (idInputRef.current) idInputRef.current.value = '';
+          if (addressInputRef.current) addressInputRef.current.value = '';
+      }
+  };
+
+  const totalLocked = agreements
+      .filter(a => ['active', 'pending_deposit'].includes((a.status || '').toLowerCase()))
+      .reduce((sum, a) => sum + (a.amount || 0), 0);
+
+  const totalReleased30 = agreements
+      .filter(a => (a.status || '').toLowerCase() === 'completed' && a.created_at && new Date(a.created_at) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+      .reduce((sum, a) => sum + (a.amount || 0), 0);
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600 animate-pulse" />
-            TrustLock Agreement System
-            <span className="ml-auto">{getStatusBadge()}</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="verification">Verification</TabsTrigger>
-              <TabsTrigger value="agreement">Agreement</TabsTrigger>
-              <TabsTrigger value="dispute">Dispute Resolution</TabsTrigger>
-            </TabsList>
-            <TabsContent value="verification">
-              <div className="py-6">
-                <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-blue-600" /> Become Gigstr Verified
-                </h2>
-                <div className="mb-4 flex items-center gap-4">
-                  <div className={`h-2 w-24 rounded-full ${step >= 1 ? 'bg-blue-600' : 'bg-gray-200'} transition-all`} />
-                  <div className={`h-2 w-24 rounded-full ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'} transition-all`} />
-                  <div className={`h-2 w-24 rounded-full ${step >= 3 ? 'bg-blue-600' : 'bg-gray-200'} transition-all`} />
+    <AnimatedPage>
+        <div className="max-w-7xl mx-auto p-4 md:p-8 pb-24">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <Shield className="w-8 h-8 text-indigo-600" />
+                        <h1 className="text-3xl font-bold text-gray-900 font-heading">TrustLock</h1>
+                    </div>
+                    <p className="text-gray-500 max-w-xl">
+                        Bank-level escrow protection for your freelance work. Work with confidence knowing funds are secured before you start.
+                    </p>
                 </div>
-                <div className="mb-4 text-muted-foreground">Upload your documents securely to earn the TrustLock Verified badge. All documents are encrypted and only visible to Gigstr admins for verification.</div>
-                {step === 1 && (
-                  <div className="mb-6 animate-fade-in">
-                    <h3 className="font-semibold mb-2">Step 1: Upload ID</h3>
-                    <input type="file" accept="image/*,application/pdf" onChange={e => e.target.files && handleUpload('id', e.target.files[0])} />
-                    {uploadedDocs.id && <div className="mt-2 text-green-700">Uploaded: {uploadedDocs.id}</div>}
-                    <Button className="mt-4" onClick={() => setStep(2)} disabled={!uploadedDocs.id}>Next</Button>
-                  </div>
-                )}
-                {step === 2 && (
-                  <div className="mb-6 animate-fade-in">
-                    <h3 className="font-semibold mb-2">Step 2: Upload Proof of Address</h3>
-                    <input type="file" accept="image/*,application/pdf" onChange={e => e.target.files && handleUpload('address', e.target.files[0])} />
-                    {uploadedDocs.address && <div className="mt-2 text-green-700">Uploaded: {uploadedDocs.address}</div>}
-                    <Button className="mt-4 mr-2" variant="outline" onClick={() => setStep(1)}>Back</Button>
-                    <Button className="mt-4" onClick={() => setStep(3)} disabled={!uploadedDocs.address}>Next</Button>
-                  </div>
-                )}
-                {step === 3 && (
-                  <div className="mb-6 animate-fade-in">
-                    <h3 className="font-semibold mb-2">Step 3: Upload Certifications (Optional)</h3>
-                    <input type="file" accept="image/*,application/pdf" onChange={e => e.target.files && handleUpload('cert', e.target.files[0])} />
-                    {uploadedDocs.cert && <div className="mt-2 text-green-700">Uploaded: {uploadedDocs.cert}</div>}
-                    <Button className="mt-4 mr-2" variant="outline" onClick={() => setStep(2)}>Back</Button>
-                    <Button className="mt-4" onClick={() => setStep(4)}>Submit for Review</Button>
-                  </div>
-                )}
-                {step === 4 && (
-                  <div className="mb-6 animate-fade-in text-center">
-                    <Shield className="h-8 w-8 text-blue-600 mx-auto animate-bounce" />
-                    <div className="font-semibold text-blue-700 mt-2">Documents Submitted!</div>
-                    <div className="text-muted-foreground mt-2">Your documents are under review. You’ll be notified once your verification is complete.</div>
-                  </div>
-                )}
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mt-6">
-                  <span className="font-medium">Privacy:</span> Your documents are encrypted and only accessible to Gigstr admins for verification. They are deleted after review.
+                <div className="flex gap-3">
+                    <Button variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-50" onClick={() => setActiveTab('disputes')}>
+                        <Gavel className="w-4 h-4 mr-2" /> Dispute Resolution
+                    </Button>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200" onClick={() => setIsCreateOpen(true)}>
+                        <Lock className="w-4 h-4 mr-2" /> New Secure Agreement
+                    </Button>
                 </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="agreement">
-              <div className="py-6">
-                <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                  <FileIcon className="h-5 w-5 text-blue-600" /> Create a TrustLock Agreement
-                </h2>
-                <div className="mb-4 text-muted-foreground">Use this guided form to create a clear, formal agreement for your job. Both parties must review and sign before work begins.</div>
-                <AgreementForm />
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mt-6">
-                  <span className="font-medium">Note:</span> Gigstr provides this tool to help formalize agreements. It is not a substitute for independent legal advice. Gigstr is not a party to this agreement and is not responsible for its enforcement.
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="dispute">
-              <div className="py-6">
-                <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                  <Gavel className="h-5 w-5 text-blue-600" /> Dispute Resolution Center
-                </h2>
-                <div className="mb-4 text-muted-foreground">You are now in a private chat with the other party and Gigstr Support. Please provide all relevant information and evidence to help us mediate.</div>
-                <DisputeChat />
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded mt-6">
-                  <span className="font-medium">Disclaimer:</span> Gigstr provides this tool to help formalize agreements. It is not a substitute for independent legal advice. Gigstr is not a party to this agreement and is not responsible for its enforcement.
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                 <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-xl">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-indigo-100 flex items-center gap-2">
+                            <Lock className="w-4 h-4" /> Locked in Escrow
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold">{formatCurrency(totalLocked)}</div>
+                        <p className="text-indigo-100 text-xs mt-1">Secured across active and pending agreements</p>
+                    </CardContent>
+                 </Card>
+
+                 <Card className="bg-white border-indigo-100 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500" /> Released (Last 30 Days)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-gray-900">{formatCurrency(totalReleased30)}</div>
+                        <p className="text-green-600 text-xs mt-1 font-medium">Completed in the last 30 days</p>
+                    </CardContent>
+                 </Card>
+
+                 <Card className="bg-white border-indigo-100 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                            <Briefcase className="w-4 h-4 text-orange-500" /> Active Agreements
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-gray-900">{agreements.filter(a => (a.status || '').toLowerCase() === 'active').length}</div>
+                        <p className="text-gray-400 text-xs mt-1">projects currently protected</p>
+                    </CardContent>
+                 </Card>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="bg-muted/40 p-1 mb-6">
+                    <TabsTrigger value="agreements" className="px-6">My Agreements</TabsTrigger>
+                    <TabsTrigger value="verification" className="px-6">Identity Verification</TabsTrigger>
+                    <TabsTrigger value="disputes" className="px-6">Dispute Center</TabsTrigger>
+                </TabsList>
+
+                {/* Agreements Tab */}
+                <TabsContent value="agreements" className="space-y-6">
+                    {loading ? (
+                        <div className="text-center py-16 bg-white border border-dashed rounded-xl">
+                            <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4 animate-pulse" />
+                            <h3 className="text-lg font-medium text-gray-900">Loading agreements...</h3>
+                        </div>
+                    ) : agreements.length === 0 ? (
+                        <div className="text-center py-16 bg-white border border-dashed rounded-xl">
+                             <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                             <h3 className="text-lg font-medium text-gray-900">No Active Agreements</h3>
+                             <p className="text-gray-500 mb-6">Create your first TrustLock agreement to secure payment.</p>
+                             <Button onClick={() => setIsCreateOpen(true)}>Create Agreement</Button>
+                        </div>
+                    ) : (
+                        <div className="grid gap-6">
+                            {agreements.map((agreement) => {
+                                const milestones = agreement.milestones || [];
+                                const completedCount = milestones.filter((m: any) => ['completed', 'released'].includes((m.status || '').toLowerCase())).length;
+                                const progress = milestones.length ? Math.round((completedCount / milestones.length) * 100) : 0;
+                                const statusText = (agreement.status || 'pending').replace('_', ' ').toUpperCase();
+
+                                return (
+                                <Card key={agreement.id} className="group hover:border-indigo-300 transition-all shadow-sm">
+                                    <CardContent className="p-6">
+                                        <div className="flex flex-col md:flex-row justify-between gap-6">
+                                            {/* Left Info */}
+                                            <div className="space-y-2 flex-1">
+                                                <div className="flex items-center gap-3">
+                                                    <Badge variant="outline" className={getStatusColor(agreement.status || '')}>
+                                                        {statusText}
+                                                    </Badge>
+                                                    <span className="text-xs text-gray-400 font-mono">{agreement.id}</span>
+                                                </div>
+                                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-700 transition-colors">
+                                                    {agreement.title}
+                                                </h3>
+                                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                    <span className="flex items-center gap-1"><User className="w-3 h-3"/> {agreement.client}</span>
+                                                    <span className="flex items-center gap-1"><Clock className="w-3 h-3"/> {agreement.created_at ? format(new Date(agreement.created_at), 'MMM d, yyyy') : 'Date pending'}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Milestones Visualization */}
+                                            <div className="flex-1 min-w-[300px] border-l pl-6 hidden md:block">
+                                                 <div className="flex justify-between text-sm mb-2">
+                                                     <span className="font-medium text-gray-700">Project Progress</span>
+                                                     <span className="text-indigo-600 font-bold">
+                                                         {progress}%
+                                                     </span>
+                                                 </div>
+                                                 <Progress value={progress} className="h-2 mb-4" />
+                                                 <div className="flex gap-2 text-xs text-gray-500">
+                                                     {milestones.map((m: any, i: number) => (
+                                                         <div key={i} className="flex items-center gap-1">
+                                                             <div className={`w-2 h-2 rounded-full ${m.status === 'released' ? 'bg-green-500' : m.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-200'}`} />
+                                                             {m.name}
+                                                         </div>
+                                                     ))}
+                                                 </div>
+                                            </div>
+
+                                            {/* Right Value & Actions */}
+                                            <div className="flex flex-col items-end justify-center min-w-[150px]">
+                                                <div className="text-2xl font-bold text-gray-900">{formatCurrency(agreement.amount)}</div>
+                                                <div className="text-xs text-gray-400 mb-4">Total Value</div>
+                                                <div className="flex gap-2">
+                                                    <Button size="sm" variant="secondary">View Details</Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <div className="bg-gray-50 px-6 py-2 rounded-b-xl border-t flex justify-between items-center text-xs text-gray-500">
+                                        <div className="flex items-center gap-2">
+                                            <Shield className="w-3 h-3 text-green-600" /> Funds secured by TrustLock Escrow
+                                        </div>
+                                        <button className="flex items-center gap-1 hover:text-indigo-600 transition-colors">
+                                            Request Release <ArrowRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </Card>
+                            );})}
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* Verification Content (Simplified) */}
+                <TabsContent value="verification">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Identity Verification</CardTitle>
+                            <CardDescription>To use TrustLock, we need to verify your identity to comply with financial regulations.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3 mb-6">
+                                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                                <div>
+                                    <h4 className="font-semibold text-yellow-800">Verification Pending</h4>
+                                    <p className="text-sm text-yellow-700">Please upload a clear copy of your South African ID or Passport. Processing takes 24-48 hours.</p>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="border border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <FileText className="w-6 h-6 text-indigo-600" />
+                                    </div>
+                                    <h3 className="font-medium text-gray-900 mb-1">Upload ID Document</h3>
+                                    <p className="text-xs text-gray-500 mb-4">Smart ID Card or Passport Green Book</p>
+                                                                        <input
+                                                                            ref={idInputRef}
+                                                                            type="file"
+                                                                            accept="image/*,application/pdf"
+                                                                            className="hidden"
+                                                                            onChange={(e) => e.target.files?.[0] && handleVerificationUpload(e.target.files[0], 'id')}
+                                                                        />
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => idInputRef.current?.click()}
+                                                                            disabled={isUploadingDoc}
+                                                                        >
+                                                                            {isUploadingDoc ? 'Uploading...' : 'Select File'}
+                                                                        </Button>
+                                </div>
+                                
+                                <div className="border border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <FileText className="w-6 h-6 text-indigo-600" />
+                                    </div>
+                                    <h3 className="font-medium text-gray-900 mb-1">Proof of Address</h3>
+                                    <p className="text-xs text-gray-500 mb-4">Utility bill or Bank Statement (Max 3 months)</p>
+                                                                        <input
+                                                                            ref={addressInputRef}
+                                                                            type="file"
+                                                                            accept="image/*,application/pdf"
+                                                                            className="hidden"
+                                                                            onChange={(e) => e.target.files?.[0] && handleVerificationUpload(e.target.files[0], 'address')}
+                                                                        />
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            onClick={() => addressInputRef.current?.click()}
+                                                                            disabled={isUploadingDoc}
+                                                                        >
+                                                                            {isUploadingDoc ? 'Uploading...' : 'Select File'}
+                                                                        </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
+                 {/* Disputes Content */}
+                 <TabsContent value="disputes">
+                    <Card className="text-center py-12">
+                        <Gavel className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900">No Active Disputes</h3>
+                        <p className="text-gray-500 max-w-md mx-auto mb-6">
+                            When payments are disputed, our arbitration team steps in to review evidence and make a binding decision.
+                        </p>
+                        <Button variant="outline">Learn about Arbitration</Button>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* Release gating + QA checklist */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                <Card className="border-indigo-100">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-indigo-600" /> Milestone release gating</CardTitle>
+                        <CardDescription>Funds release only when checks are complete.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="flex items-center gap-2"><CheckSquare className="w-4 h-4 text-green-600" /> QA checklist signed off</div>
+                        <div className="flex items-center gap-2"><CheckSquare className="w-4 h-4 text-green-600" /> Client approval captured</div>
+                        <div className="flex items-center gap-2"><CheckSquare className="w-4 h-4 text-green-600" /> Dispute window clear</div>
+                        <div className="p-3 rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-100">
+                            Automatic rule: if client approves and QA is green, release milestone 24h later unless dispute is opened.
+                        </div>
+                        <Button onClick={() => toast({ title: 'Release gating pending', description: 'Escrow release automation will run once connected.' })}>
+                            Trigger release check
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-indigo-100">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><ListChecks className="w-4 h-4 text-indigo-600" /> QA / delivery checklist</CardTitle>
+                        <CardDescription>What must be true before requesting release.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                        <div className="p-3 rounded-lg border border-border/60 flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold">Acceptance tests recorded</p>
+                                <p className="text-muted-foreground text-xs">Attach Loom + test steps.</p>
+                            </div>
+                            <Badge variant="secondary">Pending</Badge>
+                        </div>
+                        <div className="p-3 rounded-lg border border-border/60 flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold">Uptime & SLA check</p>
+                                <p className="text-muted-foreground text-xs">Last 24h monitor clean.</p>
+                            </div>
+                            <Badge variant="outline">Pass</Badge>
+                        </div>
+                        <div className="p-3 rounded-lg border border-border/60 flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold">Client sign-off note</p>
+                                <p className="text-muted-foreground text-xs">Decision maker approval stored.</p>
+                            </div>
+                            <Badge variant="secondary">Pending</Badge>
+                        </div>
+                        <Button variant="outline" onClick={() => toast({ title: 'Saved', description: 'Checklist note captured.' })}>
+                            Log QA evidence
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Create Dialog */}
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create TrustLock Agreement</DialogTitle>
+                        <DialogDescription>Define the terms and lock funds in escrow.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Project Title</label>
+                            <Input placeholder="e.g. Mobile App MVP" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Client Name/Email</label>
+                            <Input placeholder="client@company.com" value={newClient} onChange={e => setNewClient(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Total Amount (ZAR)</label>
+                            <Input type="number" placeholder="0.00" value={newAmount} onChange={e => setNewAmount(e.target.value)} />
+                        </div>
+                        <div className="bg-indigo-50 p-3 rounded-lg text-xs text-indigo-700 flex gap-2">
+                            <Shield className="w-4 h-4 shrink-0" />
+                            Client will deposit funds into TrustLock. You get paid automatically when milestones are approved.
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCreateAgreement} className="bg-indigo-600 hover:bg-indigo-700">Create & Send</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    </AnimatedPage>
   );
 };
 
-export default TrustLock; 
+export default TrustLock;
