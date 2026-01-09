@@ -3,6 +3,8 @@ import { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+type OAuthProvider = Provider | 'linkedin_oidc';
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
@@ -10,7 +12,7 @@ type AuthContextType = {
   isLoading: boolean;
   reauthenticatedAt: Date | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithProvider: (provider: Provider) => Promise<void>;
+  signInWithProvider: (provider: OAuthProvider) => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
   signOut: () => Promise<void>;
@@ -107,13 +109,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithProvider = async (provider: Provider) => {
+  const signInWithProvider = async (provider: OAuthProvider) => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: provider as Provider,
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: provider === 'linkedin_oidc' ? 'openid profile email' : undefined,
         },
       });
       
@@ -136,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       
@@ -166,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: userData,
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       

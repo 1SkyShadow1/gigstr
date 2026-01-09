@@ -24,6 +24,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Rewards from "./pages/Rewards";
 import Tools from "./pages/Tools";
+import AuthCallback from "./pages/AuthCallback";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 // Tool pages
@@ -81,6 +82,7 @@ const App = () => (
           <PWAInstallPrompt />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><MainLayout><Dashboard /></MainLayout></PrivateRoute>} />
