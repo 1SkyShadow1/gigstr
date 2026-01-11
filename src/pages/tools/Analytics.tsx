@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import PageHeader from '@/components/PageHeader';
@@ -16,13 +16,7 @@ const Analytics = () => {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchData();
-    }
-  }, [user]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const [timeRes, invoiceRes] = await Promise.all([
       supabase.from('time_entries').select('*').eq('user_id', user.id),
@@ -31,7 +25,13 @@ const Analytics = () => {
     setTimeEntries(timeRes.data || []);
     setInvoices(invoiceRes.data || []);
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user, fetchData]);
 
   // Total hours tracked
   const totalSeconds = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0);

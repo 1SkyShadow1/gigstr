@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -44,37 +44,18 @@ const Dashboard = () => {
     const [completionRate, setCompletionRate] = useState(0);
     const [upcoming, setUpcoming] = useState<any[]>([]);
     const [loadingDashboard, setLoadingDashboard] = useState(false);
+    const [hasLoadedDashboard, setHasLoadedDashboard] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!user && !isLoading) {
-      navigate('/auth');
-    }
-    if (user) {
-        fetchStats();
-
-        // Realtime Subscription
-        const channel = supabase
-            .channel('dashboard-metrics')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'gigs' },
-                () => fetchStats()
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }
-  }, [user, isLoading, navigate]);
-
-  const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
       if (!user) return;
             try {
-                setLoadingDashboard(true);
+                // Avoid flicker: only show loading when we have no data yet
+                if (!hasLoadedDashboard) {
+                    setLoadingDashboard(true);
+                }
                 const { data: gigsData, error: gigsError } = await supabase
                         .from('gigs')
                         .select('*')
@@ -106,6 +87,7 @@ const Dashboard = () => {
                         .filter(inv => (inv.status || '').toLowerCase() === 'paid')
                         .reduce((sum, inv: any) => sum + (inv.amount || 0), 0);
                 setEarnings(paidTotal);
+                setHasLoadedDashboard(true);
             } catch (err: any) {
                 toast({ title: 'Dashboard data unavailable', description: err.message, variant: 'destructive' });
                 setActiveGigs([]);
@@ -116,7 +98,30 @@ const Dashboard = () => {
             } finally {
                 setLoadingDashboard(false);
             }
-  };
+  }, [user, toast, hasLoadedDashboard]);
+
+  useEffect(() => {
+    if (!user && !isLoading) {
+      navigate('/auth');
+    }
+    if (user) {
+        fetchStats();
+
+        // Realtime Subscription
+        const channel = supabase
+            .channel('dashboard-metrics')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'gigs' },
+                () => fetchStats()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }
+  }, [user, isLoading, navigate, fetchStats]);
 
 
   if (isLoading) return <Loader />;

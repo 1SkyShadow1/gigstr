@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { Notification } from '@/utils/notificationUtils';
 
 interface NotificationsListProps {
-  notifications: any[];
-  filteredNotifications: any[];
+  notifications?: Notification[];
+  filteredNotifications: Notification[];
   loading: boolean;
   activeTab: string;
   markAsRead: (id: string) => Promise<void>;

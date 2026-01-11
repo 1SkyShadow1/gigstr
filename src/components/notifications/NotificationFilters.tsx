@@ -2,11 +2,12 @@
 import React from 'react';
 import { TabsContent, TabsList, TabsTrigger, Tabs } from '@/components/ui/tabs';
 import { CardHeader } from '@/components/ui/card';
+import type { Notification } from '@/utils/notificationUtils';
 
 interface NotificationFiltersProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
-  notifications: any[];
+  notifications: Notification[];
   unreadCount: number;
 }
 

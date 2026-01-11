@@ -6,5 +6,4 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Placeholder fetch handler; extend with caching if needed
-self.addEventListener('fetch', () => {});
+// No custom fetch handling; letting network/default caching behave normally

@@ -163,6 +163,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 // Create a hook to use the toast context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useToast = () => {
   const context = React.useContext(ToastContext);
   
@@ -183,11 +184,4 @@ export const useToast = () => {
 };
 
 // Export a standalone toast function for direct usage in components
-export const toast = (props: Omit<ToasterToast, "id">) => {
-  const context = React.useContext(ToastContext);
-  if (!context) {
-    console.error("Toast was called outside of ToastProvider context");
-    return;
-  }
-  context.addToast(props);
-};
+// Prefer using the useToast hook to access toast actions within provider scope

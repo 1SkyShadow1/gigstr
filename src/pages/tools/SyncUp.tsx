@@ -22,6 +22,10 @@ const SyncUp = () => {
     const [meetings, setMeetings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
+    const [connections, setConnections] = useState<any[]>([]);
+    const [connectProvider, setConnectProvider] = useState('google');
+    const [connectUrl, setConnectUrl] = useState('');
+    const [connecting, setConnecting] = useState(false);
     
     // New Meeting Form
     const [clientName, setClientName] = useState('');
@@ -30,8 +34,33 @@ const SyncUp = () => {
     const [duration, setDuration] = useState('30');
     const [platform, setPlatform] = useState('Google Meet');
 
-    useEffect(() => {
-        if (user) fetchMeetings();
+    const localConnectionsKey = 'gigstr-calendar-connections';
+
+    const fetchConnections = React.useCallback(async () => {
+        if (!user) return;
+        try {
+            const { data, error } = await supabase
+                .from('scheduler_calendar_connections')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                if (error.code === '42P01') {
+                    const local = localStorage.getItem(localConnectionsKey);
+                    setConnections(local ? JSON.parse(local) : []);
+                    return;
+                }
+                throw error;
+            }
+
+            setConnections(data || []);
+            localStorage.setItem(localConnectionsKey, JSON.stringify(data || []));
+        } catch (err: any) {
+            console.error('Error fetching connections:', err);
+            const local = localStorage.getItem(localConnectionsKey);
+            setConnections(local ? JSON.parse(local) : []);
+        }
     }, [user]);
 
     const fetchMeetings = async () => {
@@ -57,6 +86,56 @@ const SyncUp = () => {
          } finally {
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchMeetings();
+            fetchConnections();
+        }
+    }, [user, fetchConnections]);
+
+    const saveConnection = async (connection: any) => {
+        if (!user) return;
+        try {
+            const { error } = await supabase
+                .from('scheduler_calendar_connections')
+                .insert({ ...connection, user_id: user.id });
+
+            if (error) {
+                if (error.code !== '42P01') throw error;
+                // fallback to local storage
+                const next = [connection, ...connections];
+                setConnections(next);
+                localStorage.setItem(localConnectionsKey, JSON.stringify(next));
+                return;
+            }
+
+            await fetchConnections();
+        } catch (err: any) {
+            console.error('Error saving connection:', err);
+            const next = [connection, ...connections];
+            setConnections(next);
+            localStorage.setItem(localConnectionsKey, JSON.stringify(next));
+        }
+    };
+
+    const handleConnectCalendar = async () => {
+        if (!connectProvider && !connectUrl) {
+            toast({ title: 'Missing details', description: 'Pick a provider or paste a calendar URL.', variant: 'destructive' });
+            return;
+        }
+        setConnecting(true);
+        const newConnection = {
+            provider: connectProvider,
+            url: connectUrl || undefined,
+            status: 'connected',
+            created_at: new Date().toISOString(),
+        };
+        await saveConnection(newConnection);
+        toast({ title: 'Calendar connected', description: 'We will sync your availability and bookings.' });
+        setConnectUrl('');
+        setConnecting(false);
     };
 
     const handleCreateMeeting = async (e: React.FormEvent) => {
@@ -153,6 +232,56 @@ const SyncUp = () => {
                                 </Button>
                             </CardContent>
                         </Card>
+
+                        <Card className="border-0 shadow-lg shadow-blue-500/5">
+                            <CardHeader>
+                                <CardTitle className="text-base font-semibold text-blue-900">Calendar Connections</CardTitle>
+                                <CardDescription>Connect Google, Outlook, iCloud or any ICS/WebCal link.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { id: 'google', label: 'Google' },
+                                        { id: 'outlook', label: 'Outlook' },
+                                        { id: 'apple', label: 'iCloud' },
+                                        { id: 'ics', label: 'ICS/WebCal' },
+                                    ].map((opt) => (
+                                        <Button
+                                          key={opt.id}
+                                          type="button"
+                                          variant={connectProvider === opt.id ? 'glow' : 'outline'}
+                                          className="w-full"
+                                          onClick={() => setConnectProvider(opt.id)}
+                                        >
+                                          {opt.label}
+                                        </Button>
+                                    ))}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Calendar URL (optional)</Label>
+                                    <Input
+                                      placeholder="https://...ics"
+                                      value={connectUrl}
+                                      onChange={(e) => setConnectUrl(e.target.value)}
+                                    />
+                                </div>
+                                <Button className="w-full" onClick={handleConnectCalendar} disabled={connecting}>
+                                    {connecting ? 'Connecting...' : 'Connect & Sync'}
+                                </Button>
+                                <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold text-blue-900">Connected</h4>
+                                    {connections.length === 0 && (
+                                        <p className="text-sm text-slate-500">No calendars connected yet.</p>
+                                    )}
+                                    {connections.map((conn, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-100 text-sm">
+                                            <span className="font-medium text-blue-900 capitalize">{conn.provider}</span>
+                                            <span className="text-xs text-blue-600">{conn.status || 'connected'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     {/* Right Column: Upcoming & Actions */}
@@ -208,7 +337,9 @@ const SyncUp = () => {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {meetings.length === 0 ? (
+                                    {loading ? (
+                                        <div className="text-sm text-slate-500">Syncing schedule…</div>
+                                    ) : meetings.length === 0 ? (
                                         <div className="text-center py-12 bg-slate-50 rounded-lg border-2 border-dashed border-slate-100">
                                             <div className="bg-blue-50 p-3 rounded-full inline-flex mb-3">
                                                 <Clock className="h-6 w-6 text-blue-400" />

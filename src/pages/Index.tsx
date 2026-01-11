@@ -7,6 +7,7 @@ import TestimonialSection from '@/components/TestimonialSection';
 import Footer from '@/components/Footer';
 import PopularServices from '@/components/PopularServices';
 import SafetySection from '@/components/SafetySection';
+import OpportunitySpectrum from '@/components/OpportunitySpectrum';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import AnimatedPage from '@/components/AnimatedPage';
@@ -52,6 +53,7 @@ const Index: React.FC = () => {
           <main>
             <HeroSection />
             <PopularServices />
+            <OpportunitySpectrum />
             <FeatureSection />
             <HowItWorks />
             <SafetySection />

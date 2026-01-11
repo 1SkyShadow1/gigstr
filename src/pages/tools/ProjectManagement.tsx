@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,14 +44,14 @@ type Project = {
 };
 
 type Task = {
-  id: string;
-  project_id: string;
-  title: string;
-  description: string | null;
-  status: 'todo' | 'in_progress' | 'review' | 'done';
-  due_date: string | null;
-  priority: 'low' | 'medium' | 'high';
-  assignee?: string;
+    id: string;
+    project_id: string;
+    title: string;
+    description: string | null;
+    status: 'todo' | 'in_progress' | 'done';
+    due_date: string | null;
+    priority?: 'low' | 'medium' | 'high';
+    assignee?: string;
 };
 
 const ProjectManagement = () => {
@@ -71,47 +71,59 @@ const ProjectManagement = () => {
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskStatus, setNewTaskStatus] = useState('todo');
 
-    useEffect(() => {
-        if (!user) return;
-        fetchProjects();
-        fetchTasks();
-    }, [user]);
-
-    const fetchProjects = async () => {
+    const fetchProjects = useCallback(async () => {
+        if (!user) return [] as Project[];
         try {
             setLoadingProjects(true);
             const { data, error } = await supabase
                 .from('projects')
                 .select('*')
-                .eq('user_id', user!.id)
+                .eq('user_id', user.id)
                 .order('created_at', { ascending: false });
             if (error) throw error;
-            setProjects(data || []);
+            const projectsData = data || [];
+            setProjects(projectsData);
+            return projectsData;
         } catch (err: any) {
             toast({ title: 'Could not load projects', description: err.message, variant: 'destructive' });
             setProjects([]);
+            return [] as Project[];
         } finally {
             setLoadingProjects(false);
         }
-    };
+    }, [user, toast]);
 
-    const fetchTasks = async () => {
+    const fetchTasks = useCallback(async (projectIds?: string[]) => {
+        if (!user) return;
+        const ids = (projectIds ?? projects.map(p => p.id)).filter(Boolean);
+        if (ids.length === 0) {
+            setTasks([]);
+            return;
+        }
         try {
             setLoadingTasks(true);
             const { data, error } = await supabase
                 .from('tasks')
                 .select('*')
-                .eq('user_id', user!.id)
+                .in('project_id', ids)
                 .order('created_at', { ascending: false });
             if (error) throw error;
-            setTasks(data as Task[] || []);
+            setTasks((data as Task[]) || []);
         } catch (err: any) {
             toast({ title: 'Could not load tasks', description: err.message, variant: 'destructive' });
             setTasks([]);
         } finally {
             setLoadingTasks(false);
         }
-    };
+    }, [user, toast, projects]);
+
+    useEffect(() => {
+        if (!user) return;
+        (async () => {
+            const projectsData = await fetchProjects();
+            await fetchTasks(projectsData.map(p => p.id));
+        })();
+    }, [user, fetchProjects, fetchTasks]);
 
     const filteredTasks = tasks.filter(t => {
         const matchesProject = selectedProjectId === 'all' || t.project_id === selectedProjectId;
@@ -135,18 +147,16 @@ const ProjectManagement = () => {
             toast({ variant: 'destructive', title: 'Title required', description: 'Give the task a name.' });
             return;
         }
-        const newTask: Task = {
-            id: Math.random().toString(),
+        const payload = {
             project_id: projectId,
             title: newTaskTitle,
             description: '',
-            status: newTaskStatus as any,
+            status: newTaskStatus as Task['status'],
             due_date: new Date().toISOString(),
-            priority: 'medium'
         };
         supabase.from('tasks').insert({
-            ...newTask,
-            user_id: user.id
+            ...payload,
+            // Task ownership is enforced via project_id and RLS on projects
         }).then(({ error }) => {
             if (error) {
                 toast({ title: 'Could not create task', description: error.message, variant: 'destructive' });
@@ -314,7 +324,6 @@ const ProjectManagement = () => {
                         <div className="flex gap-6 h-full min-w-max">
                             <StatusColumn title="To Do" status="todo" color="bg-gray-500" />
                             <StatusColumn title="In Progress" status="in_progress" color="bg-blue-500" />
-                            <StatusColumn title="In Review" status="review" color="bg-orange-500" />
                             <StatusColumn title="Completed" status="done" color="bg-green-500" />
                         </div>
                         )}
@@ -373,7 +382,6 @@ const ProjectManagement = () => {
                                     <SelectContent>
                                         <SelectItem value="todo">To Do</SelectItem>
                                         <SelectItem value="in_progress">In Progress</SelectItem>
-                                        <SelectItem value="review">In Review</SelectItem>
                                         <SelectItem value="done">Done</SelectItem>
                                     </SelectContent>
                                 </Select>

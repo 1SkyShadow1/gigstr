@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,36 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load notifications. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
+
+  const handleNewNotification = useCallback((notification: any) => {
+    setNotifications(prev => [notification, ...prev]);
+    toast({
+      title: notification.title,
+      description: notification.message,
+    });
+  }, [toast]);
 
   useEffect(() => {
     if (user) {
@@ -75,37 +105,7 @@ export const useNotifications = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
-
-  const fetchNotifications = async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load notifications. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNewNotification = (notification: any) => {
-    setNotifications(prev => [notification, ...prev]);
-    toast({
-      title: notification.title,
-      description: notification.message,
-    });
-  };
+  }, [user, fetchNotifications, handleNewNotification, toast]);
 
   const markAllAsRead = async () => {
     if (!user) return;

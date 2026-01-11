@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import Gigs from "./pages/Gigs";
 import GigDetail from "./pages/GigDetail";
 import CreateGig from "./pages/CreateGig";
+import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
@@ -82,6 +83,7 @@ const App = () => (
           <PWAInstallPrompt />
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />

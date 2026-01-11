@@ -11,9 +11,16 @@ const AuthCallback = () => {
   useEffect(() => {
     const run = async () => {
       const params = new URLSearchParams(location.search);
+      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+
       const code = params.get('code');
       const error = params.get('error');
       const errorDescription = params.get('error_description');
+
+      // Handle token-style callbacks (magic link / email OTP) in addition to code flow (OAuth)
+      const accessToken = params.get('access_token') || hashParams.get('access_token');
+      const refreshToken = params.get('refresh_token') || hashParams.get('refresh_token');
+      const redirectTo = params.get('next') || params.get('redirect_to') || '/dashboard';
 
       if (error) {
         toast({
@@ -25,32 +32,34 @@ const AuthCallback = () => {
         return;
       }
 
-      if (!code) {
-        toast({
-          title: 'Missing authorization code',
-          description: 'Unable to complete sign-in. Please try again.',
-          variant: 'destructive',
-        });
-        navigate('/auth', { replace: true });
-        return;
-      }
+      try {
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+        } else if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+        } else {
+          throw new Error('Missing authorization token.');
+        }
 
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) {
+        navigate(redirectTo, { replace: true });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unable to complete sign-in. Please try again.';
         toast({
           title: 'Sign-in failed',
-          description: exchangeError.message,
+          description: message,
           variant: 'destructive',
         });
         navigate('/auth', { replace: true });
-        return;
       }
-
-      navigate('/dashboard', { replace: true });
     };
 
     run();
-  }, [location.search, navigate, toast]);
+  }, [location.search, location.hash, navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">

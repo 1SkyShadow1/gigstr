@@ -11,7 +11,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import { motion } from 'framer-motion';
-import { Sparkles, Mail, Chrome, Linkedin } from 'lucide-react';
+import { Sparkles, Mail, Chrome, Linkedin, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -38,6 +39,8 @@ const Auth = () => {
   const { signIn, signUp, signInWithProvider, signInWithMagicLink, user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [skillsList, setSkillsList] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
   const navigate = useNavigate();
   
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -93,15 +96,15 @@ const Auth = () => {
         last_name: values.lastName,
         username: values.username,
         account_type: values.accountType || 'pro',
-        skills: values.skills
-          ? values.skills.split(',').map(s => s.trim()).filter(Boolean)
-          : [],
+        skills: skillsList,
         location: values.location,
         experience_level: values.experience,
       };
       await signUp(values.email, values.password, userData);
       // Don't auto-redirect, wait for auth state change or instruct user to check email
       setActiveTab("login");
+      setSkillsList([]);
+      setSkillInput("");
     } catch (error) {
       console.error("Signup error:", error);
     }
@@ -358,9 +361,65 @@ const Auth = () => {
                     name="skills"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">Top skills (comma separated)</FormLabel>
+                        <FormLabel className="text-gray-300">Top skills (press Enter to add)</FormLabel>
                         <FormControl>
-                          <Input placeholder="React, Plumbing, Copywriting" {...field} className="bg-white/5 border-white/10 focus:border-primary/50 text-white" />
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              {skillsList.map((skill) => (
+                                <Badge key={skill} variant="secondary" className="flex items-center gap-1 bg-white/10 text-white border-white/20">
+                                  {skill}
+                                  <button
+                                    type="button"
+                                    aria-label={`Remove ${skill}`}
+                                    className="inline-flex items-center justify-center rounded-full hover:bg-white/10"
+                                    onClick={() => {
+                                      const next = skillsList.filter(s => s !== skill);
+                                      setSkillsList(next);
+                                      signupForm.setValue('skills', next.join(', '));
+                                    }}
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </Badge>
+                              ))}
+                            </div>
+                            <Input
+                              placeholder="Domestic work, Plumbing, Tutoring"
+                              value={skillInput}
+                              className="bg-white/5 border-white/10 focus:border-primary/50 text-white"
+                              onChange={(e) => {
+                                setSkillInput(e.target.value);
+                                field.onChange(e);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ',') {
+                                  e.preventDefault();
+                                  const value = skillInput.trim();
+                                  if (!value) return;
+                                  if (skillsList.includes(value)) {
+                                    setSkillInput("");
+                                    return;
+                                  }
+                                  const next = [...skillsList, value];
+                                  setSkillsList(next);
+                                  signupForm.setValue('skills', next.join(', '));
+                                  setSkillInput("");
+                                }
+                              }}
+                              onBlur={() => {
+                                const value = skillInput.trim();
+                                if (!value) return;
+                                if (skillsList.includes(value)) {
+                                  setSkillInput("");
+                                  return;
+                                }
+                                const next = [...skillsList, value];
+                                setSkillsList(next);
+                                signupForm.setValue('skills', next.join(', '));
+                                setSkillInput("");
+                              }}
+                            />
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

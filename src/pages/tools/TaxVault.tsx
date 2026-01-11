@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedPage from '@/components/AnimatedPage';
@@ -63,13 +63,7 @@ const TaxVault = () => {
   // Assuming a generic 30% tax rate for estimation
   const estTaxSavings = totalExpenses * 0.3;
 
-  useEffect(() => {
-    if (user) {
-      fetchExpenses();
-    }
-  }, [user]);
-
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -88,7 +82,13 @@ const TaxVault = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchExpenses();
+    }
+  }, [user, fetchExpenses]);
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();

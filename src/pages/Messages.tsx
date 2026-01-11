@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -83,25 +83,16 @@ const Messages = () => {
     ? chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : chats;
 
-  // Extract recipient ID from URL query params
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const recipientId = params.get('recipient');
-    
-    if (recipientId && user) {
-      // Check if chat with this recipient exists
-      const chatIndex = chats.findIndex(chat => chat.recipient_id === recipientId);
-      
-      if (chatIndex >= 0) {
-        setActiveChat(chatIndex);
-      } else {
-        // Create a new chat with this recipient
-        fetchRecipientProfile(recipientId);
-      }
-    }
-  }, [location, chats, user]);
+  const setActiveChatByRecipient = useCallback((recipientId: string) => {
+    setActiveChat(prev => {
+      const idx = chats.findIndex(chat => chat.recipient_id === recipientId);
+      if (idx !== -1) return idx;
+      // If not found, fallback to first chat
+      return 0;
+    });
+  }, [chats]);
 
-  const fetchRecipientProfile = async (recipientId: string) => {
+  const fetchRecipientProfile = useCallback(async (recipientId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -154,17 +145,25 @@ const Messages = () => {
     } catch (error: any) {
       console.error('Error fetching recipient profile:', error);
     }
-  };
+  }, [user, navigate, fetchChats, setActiveChatByRecipient]);
 
-  // Helper to select chat by recipient_id
-  const setActiveChatByRecipient = (recipientId: string) => {
-    setActiveChat(prev => {
-      const idx = chats.findIndex(chat => chat.recipient_id === recipientId);
-      if (idx !== -1) return idx;
-      // If not found, fallback to first chat
-      return 0;
-    });
-  };
+  // Extract recipient ID from URL query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const recipientId = params.get('recipient');
+    
+    if (recipientId && user) {
+      // Check if chat with this recipient exists
+      const chatIndex = chats.findIndex(chat => chat.recipient_id === recipientId);
+      
+      if (chatIndex >= 0) {
+        setActiveChat(chatIndex);
+      } else {
+        // Create a new chat with this recipient
+        fetchRecipientProfile(recipientId);
+      }
+    }
+  }, [location.search, chats, user, fetchRecipientProfile]);
 
   // When chats update, if a recipient param is present, select the correct chat
   useEffect(() => {
@@ -197,7 +196,7 @@ const Messages = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, fetchChats, handleNewMessage]);
 
   // Fix chat loader bug: only call fetchMessages when activeChat is valid and filteredChats[activeChat] exists
   useEffect(() => {
@@ -241,15 +240,11 @@ const Messages = () => {
                 setLoading(false);
             }, 1000);
         }
-    }, [user]);
+    }, [user, fetchChats]);
 
-    const fetchChats = async () => {
+    const fetchChats = useCallback(async () => {
         if (!user) return;
         try {
-          // Get all unique conversations
-          // This is complex in Supabase without a view. 
-          // Simplified: fetch all messages where user is sender or receiver, then process unique interaction partners.
-          
           const { data, error } = await supabase
             .from('messages')
             .select(`
@@ -269,17 +264,16 @@ const Messages = () => {
               if (!conversationMap.has(partnerId)) {
                    const partner = msg.sender_id === user.id ? msg.receiver : msg.sender;
                    conversationMap.set(partnerId, {
-                       id: partnerId, // Chat ID is partner ID for this simple model
+                       id: partnerId,
                        recipient_id: partnerId,
                        name: `${partner?.first_name || 'Unknown'} ${partner?.last_name || ''}`.trim(),
                        avatar: partner?.avatar_url,
                        lastMessage: msg.content,
                        time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }),
                        unread: msg.receiver_id === user.id && !msg.read ? 1 : 0,
-                       timestamp: new Date(msg.created_at) // for sorting
+                       timestamp: new Date(msg.created_at)
                    });
               } else {
-                   // Update unread count if applicable
                    const existing = conversationMap.get(partnerId);
                    if (msg.receiver_id === user.id && !msg.read) {
                        existing.unread += 1;
@@ -294,9 +288,9 @@ const Messages = () => {
           console.error(e);
           setLoading(false);
         }
-      };
+      }, [user]);
     
-    const fetchMessages = async (recipientId: string) => {
+    const fetchMessages = useCallback(async (recipientId: string) => {
         if (!user) return;
         setIsLoadingMessages(true);
         setErrorLoadingMessages(false);
@@ -330,24 +324,21 @@ const Messages = () => {
         } finally {
           setIsLoadingMessages(false);
         }
-      };
+      }, [user, toast]);
 
-    const handleNewMessage = (payload: any) => {
-        // Only add if it belongs to the current chat
-        const currentChat = filteredChats[activeChat || 0];
-        if (currentChat && (payload.sender_id === currentChat.recipient_id || payload.receiver_id === currentChat.recipient_id)) {
-            setMessages((prev: any) => [...prev, payload]);
-            // Scroll to bottom
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            // Otherwise, update the chat list to show new message or unread badge
-            fetchChats();
-            toast({
-                title: "New Message",
-                description: "You have a new message",
-            });
-        }
-    };
+    const handleNewMessage = useCallback((payload: any) => {
+      const currentChat = filteredChats[activeChat || 0];
+      if (currentChat && (payload.sender_id === currentChat.recipient_id || payload.receiver_id === currentChat.recipient_id)) {
+        setMessages((prev: any) => [...prev, payload]);
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        fetchChats();
+        toast({
+          title: "New Message",
+          description: "You have a new message",
+        });
+      }
+    }, [activeChat, filteredChats, fetchChats, toast]);
 
   // Send Message Handler
     const handleSendMessage = async (e?: React.FormEvent) => {

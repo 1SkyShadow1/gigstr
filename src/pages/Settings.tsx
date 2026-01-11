@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -53,6 +53,7 @@ const notificationSchema = z.object({
 
 const Settings = () => {
   const { user, profile } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("account");
   
   const accountForm = useForm<z.infer<typeof profileSchema>>({

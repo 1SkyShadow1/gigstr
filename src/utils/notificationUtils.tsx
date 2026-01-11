@@ -2,6 +2,16 @@
 import React from 'react';
 import { Briefcase, MessageCircle, Bell, CheckCircle, DollarSign } from 'lucide-react';
 
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  link?: string | null;
+  created_at: string;
+};
+
 export const getNotificationIcon = (type: string) => {
   switch (type) {
     case 'application':

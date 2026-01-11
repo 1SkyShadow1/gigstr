@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -95,11 +95,59 @@ const GigDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const fetchGigData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      if (!id) {
+        throw new Error("Gig ID is missing");
+      }
+      
+      const { data: gigData, error: gigError } = await supabase
+        .from('gigs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (gigError) throw gigError;
+      if (!gigData) throw new Error("Gig not found");
+      
+      setGig(gigData);
+      
+      if (user) {
+        const isUserOwner = user.id === gigData.client_id;
+        setIsOwner(isUserOwner);
+        
+        if (isUserOwner) {
+          const { data: appsData, error: appsError } = await supabase
+            .from('applications')
+            .select('*')
+            .eq('gig_id', id);
+          if (!appsError) setApplications(appsData || []);
+        } else {
+          const { data: appData, error: appError } = await supabase
+            .from('applications')
+            .select('*')
+            .eq('gig_id', id)
+            .eq('worker_id', user.id)
+            .single();
+          if (!appError) setApplication(appData);
+        }
+      }
+      
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user, toast]);
+
   useEffect(() => {
     if (!isLoading) {
       fetchGigData();
     }
-  }, [id, isLoading, user]);
+  }, [id, isLoading, user, fetchGigData]);
 
   // Fetch similar gigs after gig is loaded
   useEffect(() => {
@@ -146,58 +194,7 @@ const GigDetail = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gig?.id]);
-
-  const fetchGigData = async () => {
-    try {
-      setLoading(true);
-      
-      if (!id) {
-        throw new Error("Gig ID is missing");
-      }
-      
-      const { data: gigData, error: gigError } = await supabase
-        .from('gigs')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (gigError) throw gigError;
-      if (!gigData) throw new Error("Gig not found");
-      
-      setGig(gigData);
-      
-      if (user) {
-        const isUserOwner = user.id === gigData.client_id;
-        setIsOwner(isUserOwner);
-        
-        if (isUserOwner) {
-          const { data: appsData, error: appsError } = await supabase
-            .from('applications')
-            .select('*')
-            .eq('gig_id', id);
-          if (!appsError) setApplications(appsData || []);
-        } else {
-          const { data: appData } = await supabase
-            .from('applications')
-            .select('*')
-            .eq('gig_id', id)
-            .eq('worker_id', user.id)
-            .maybeSingle();
-          setApplication(appData);
-        }
-      }
-    } catch (error: any) {
-      console.error('Error fetching gig details:', error);
-      toast({
-        title: "Error fetching gig details",
-        description: error.message || "Failed to load gig details",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [gig?.id, fetchGigData]);
 
   const handleApply = async () => {
     if (!user) {
@@ -252,7 +249,7 @@ const GigDetail = () => {
       
       if (error) throw error;
       
-      let workerId = applications.find(app => app.id === applicationId)?.worker_id;
+      const workerId = applications.find(app => app.id === applicationId)?.worker_id;
       // Notify applicant
       if (workerId) {
         await supabase.from('notifications').insert({

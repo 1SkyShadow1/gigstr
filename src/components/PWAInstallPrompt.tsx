@@ -2,15 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+};
+
 const STORAGE_KEY = 'pwa-install-dismissed';
 
 const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [open, setOpen] = useState(false);
   const [ctaVisible, setCtaVisible] = useState(false);
 
   useEffect(() => {
-    const installReady = (e: any) => {
+    const installReady = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setCtaVisible(true);
@@ -24,7 +29,9 @@ const PWAInstallPrompt: React.FC = () => {
       localStorage.removeItem(STORAGE_KEY);
     };
 
-    const alreadyInstalled = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+    const alreadyInstalled =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
     if (alreadyInstalled) return;
 
     window.addEventListener('beforeinstallprompt', installReady);

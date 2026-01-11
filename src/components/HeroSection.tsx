@@ -43,15 +43,15 @@ const HeroSection = () => {
                  {liveUsers.toLocaleString()} locals active now
               </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-heading leading-tight tracking-tight">
-                  South Africa's <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">#1 Marketplace</span> <br />
-                  <span className="text-3xl sm:text-4xl md:text-6xl text-muted-foreground">for skilled pros.</span>
-              </h1>
+                  <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold font-heading leading-tight tracking-tight">
+                    Where hidden talent <br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">gets seen & booked</span> <br />
+                    <span className="text-3xl sm:text-4xl md:text-6xl text-muted-foreground">—every skill, every trade.</span>
+                  </h1>
               
-              <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed px-4 md:px-0">
-                  From Sandton to Sea Point, find verified local talent for any job. Secure payments in Rands, ID checked professionals, and zero hassle.
-              </p>
+                  <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 leading-relaxed px-4 md:px-0">
+                    From domestic workers and plumbers to tutors, au pairs, caregivers, electricians, builders, designers, and coders—Gigstr makes sure overlooked careers get discovered, trusted, and paid fast.
+                  </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start px-4 md:px-0">
                   <Button size="xl" variant="glow" onClick={() => navigate('/create-gig')} className="w-full sm:w-auto text-lg h-14 rounded-2xl bg-primary hover:bg-primary/90">
@@ -62,17 +62,20 @@ const HeroSection = () => {
                   </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 pt-4 text-sm font-medium text-muted-foreground px-4 md:px-0">
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 md:gap-6 pt-4 text-sm font-medium text-muted-foreground px-4 md:px-0">
                   <div className="flex items-center gap-2">
-                      <ShieldCheck className="text-green-500" size={18} /> ID Verified
+                    <ShieldCheck className="text-green-500" size={18} /> ID Verified
                   </div>
                   <div className="flex items-center gap-2">
-                      <Star className="text-yellow-400 fill-yellow-400" size={18} /> 4.8/5 Avg Rating
+                    <Star className="text-yellow-400 fill-yellow-400" size={18} /> 4.8/5 Avg Rating
                   </div>
                   <div className="flex items-center gap-2">
-                       <span className="font-bold text-foreground">50k+</span> Jobs Done
+                     <span className="font-bold text-foreground">50k+</span> Jobs Done
                   </div>
-              </div>
+                  <div className="flex items-center gap-2">
+                     <span className="font-bold text-foreground">All roles</span> Welcome
+                  </div>
+                </div>
 
               {/* Mobile Visual - Single Card showcasing a profile */}
               <motion.div 

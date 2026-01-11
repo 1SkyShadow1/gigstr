@@ -2,19 +2,22 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
 type OAuthProvider = Provider | 'linkedin_oidc';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 type AuthContextType = {
   session: Session | null;
   user: User | null;
-  profile: any | null;
+  profile: Profile | null;
   isLoading: boolean;
   reauthenticatedAt: Date | null;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithProvider: (provider: OAuthProvider) => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: any) => Promise<void>;
+  signUp: (email: string, password: string, userData: Record<string, unknown>) => Promise<void>;
   signOut: () => Promise<void>;
   changeEmail: (newEmail: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -29,10 +32,48 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [reauthenticatedAt, setReauthenticatedAt] = useState<Date | null>(null);
   const { toast } = useToast();
+
+  const fetchUserProfile = React.useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      // If skills are present in auth metadata but missing in profile, sync them once
+      const metadataSkills = Array.isArray(user?.user_metadata?.skills)
+        ? (user?.user_metadata?.skills as string[]).filter(Boolean)
+        : [];
+
+      if ((!data?.skills || data.skills.length === 0) && metadataSkills.length > 0) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ skills: metadataSkills })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Error syncing metadata skills to profile:', updateError);
+        } else {
+          setProfile({ ...data, skills: metadataSkills });
+          return;
+        }
+      }
+
+      setProfile(data);
+    } catch (error) {
+      console.error('Error in profile fetch:', error);
+    }
+  }, [user?.user_metadata?.skills]);
 
   useEffect(() => {
     // Set up listener for auth state changes
@@ -65,26 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error in profile fetch:', error);
-    }
-  };
+  }, [fetchUserProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -97,10 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Success!",
         description: "You've been signed in",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to sign in.';
       toast({
         title: "Error signing in",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -121,10 +144,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to sign in.';
       toast({
         title: "Error signing in",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -149,10 +173,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Check your email",
         description: "We sent you a magic link to sign in.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to request magic link.';
       toast({
         title: "Error requesting magic link",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -161,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, userData: any) => {
+  const signUp = async (email: string, password: string, userData: Record<string, unknown>) => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signUp({
@@ -179,10 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Account created!",
         description: "Please check your email to confirm your account",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to sign up.';
       toast({
         title: "Error signing up",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -201,10 +227,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Signed out",
         description: "You've been signed out successfully",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to sign out.';
       toast({
         title: "Error signing out",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -239,10 +266,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Email change initiated",
         description: "Please check both your old and new email addresses to confirm the change",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to change email.';
       toast({
         title: "Error changing email",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -255,7 +283,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?tab=reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
@@ -264,10 +292,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Password reset email sent",
         description: "Please check your email for instructions to reset your password",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to send reset email.';
       toast({
         title: "Error sending reset email",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -301,10 +330,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Password updated",
         description: "Your password has been successfully updated",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unable to update password.';
       toast({
         title: "Error updating password",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
       throw error;
@@ -326,7 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setReauthenticatedAt(new Date());
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Authentication failed",
         description: "The password you entered is incorrect",
@@ -373,6 +403,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

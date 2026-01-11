@@ -2,10 +2,10 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getNotificationIcon, formatTimestamp } from '@/utils/notificationUtils';
+import { getNotificationIcon, formatTimestamp, Notification } from '@/utils/notificationUtils';
 
 interface NotificationItemProps {
-  notification: any;
+  notification: Notification;
   markAsRead: (id: string) => Promise<void>;
   navigate: (path: string) => void;
 }

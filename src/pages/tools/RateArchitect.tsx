@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedPage from '@/components/AnimatedPage';
@@ -34,15 +34,7 @@ const RateArchitect = () => {
     const [hourlyRate, setHourlyRate] = useState(0);
     const [savedRates, setSavedRates] = useState<any[]>([]);
 
-    useEffect(() => {
-        calculateRate();
-    }, [annualGoal, billableHours, weeksOff, monthlyExpenses, taxRate]);
-
-    useEffect(() => {
-        if (user) fetchSavedRates();
-    }, [user]);
-
-    const calculateRate = () => {
+    const calculateRate = useCallback(() => {
         // Total needed = (Annual Goal + (Monthly Expenses * 12)) / (1 - Tax Rate / 100)
         // This is a simplified view: You need enough pre-tax money to cover taxes + expenses + goal (net).
         // Let's assume Annual Goal is NET income desired.
@@ -58,7 +50,15 @@ const RateArchitect = () => {
         
         const rate = totalBillableHours > 0 ? grossRevenueNeeded / totalBillableHours : 0;
         setHourlyRate(Math.round(rate));
-    };
+    }, [annualGoal, billableHours, weeksOff, monthlyExpenses, taxRate]);
+
+    useEffect(() => {
+        calculateRate();
+    }, [calculateRate]);
+
+    useEffect(() => {
+        if (user) fetchSavedRates();
+    }, [user]);
 
     const fetchSavedRates = async () => {
         const { data } = await supabase.from('rate_calculations').select('*').order('created_at', { ascending: false });
