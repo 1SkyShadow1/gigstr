@@ -11,7 +11,9 @@ export type Database = {
     Tables: {
       applications: {
         Row: {
+          availability: string | null
           created_at: string | null
+          expected_rate: number | null
           gig_id: string
           id: string
           proposal: string
@@ -20,7 +22,9 @@ export type Database = {
           worker_id: string
         }
         Insert: {
+          availability?: string | null
           created_at?: string | null
+          expected_rate?: number | null
           gig_id: string
           id?: string
           proposal: string
@@ -29,7 +33,9 @@ export type Database = {
           worker_id: string
         }
         Update: {
+          availability?: string | null
           created_at?: string | null
+          expected_rate?: number | null
           gig_id?: string
           id?: string
           proposal?: string

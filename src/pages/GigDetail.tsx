@@ -233,21 +233,29 @@ const GigDetail = () => {
       });
       return;
     }
+    if (!proposal.trim()) {
+      toast({ title: "Cover letter required", description: "Please add a short cover letter before submitting.", variant: "destructive" });
+      return;
+    }
     try {
       setApplying(true);
       // Simplified Logic 
       // Actual logic is extensive in previous implementation
       // Keeping it conceptual for the styling update
       
+        const expectedRateValue = expectedRate ? Number(expectedRate) : null;
+        const availabilityValue = availability.trim() ? availability.trim() : null;
+
       const newApplication = {
           gig_id: gig.id,
           worker_id: user?.id,
           status: 'pending',
-          proposal: proposal,
-          expected_rate: parseFloat(expectedRate) || gig.budget,
+          proposal: proposal.trim(),
+          expected_rate: expectedRateValue,
+          availability: availabilityValue,
       };
 
-      const { error } = await supabase
+        const { error } = await supabase
           .from('applications')
           .insert(newApplication);
 
@@ -569,12 +577,32 @@ const GigDetail = () => {
                              <div className="text-center p-4 bg-primary/10 rounded-xl border border-primary/20 mb-4">
                                 <p className="text-primary font-medium">You posted this gig</p>
                                 <p className="text-sm text-primary/80 mt-1">{applications.length} applications received</p>
+                            <div className="mt-4 space-y-3 text-left">
+                              {applications.map((app) => (
+                                <div key={app.id} className="rounded-lg border border-white/10 bg-white/5 p-3">
+                                  <p className="text-sm text-white font-medium">Application</p>
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap">{app.proposal}</p>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                                    {app.expected_rate ? <span className="text-white font-semibold">Rate: {formatPrice(app.expected_rate)}</span> : null}
+                                    {app.availability ? <span>Availability: {app.availability}</span> : null}
+                                    <Badge variant="outline" className="border-white/20 capitalize">{app.status}</Badge>
+                                  </div>
+                                </div>
+                              ))}
+                              {applications.length === 0 && (
+                                <p className="text-xs text-muted-foreground">No applications yet.</p>
+                              )}
                             </div>
+                          </div>
                         ) : application ? (
                             <div className="text-center p-4 bg-green-500/10 rounded-xl border border-green-500/20 mb-4">
                                 <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
                                 <p className="text-green-500 font-medium">Applied on {new Date(application.created_at).toLocaleDateString()}</p>
-                                <Badge variant="outline" className="mt-2 border-green-500/30 text-green-400 capitalize">{application.status}</Badge>
+                            <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                              {application.expected_rate ? <p className="text-white">Expected rate: {formatPrice(application.expected_rate)}</p> : null}
+                              {application.availability ? <p>Availability: {application.availability}</p> : null}
+                            </div>
+                            <Badge variant="outline" className="mt-2 border-green-500/30 text-green-400 capitalize">{application.status}</Badge>
                             </div>
                         ) : (
                             <div className="space-y-4">

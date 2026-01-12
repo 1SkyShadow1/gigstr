@@ -18,11 +18,14 @@ export const useNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -104,6 +107,8 @@ export const useNotifications = () => {
       return () => {
         supabase.removeChannel(channel);
       };
+    } else {
+      setLoading(false);
     }
   }, [user, fetchNotifications, handleNewNotification, toast]);
 
