@@ -21,6 +21,7 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -38,6 +39,7 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setNotifications(data || []);
+      setLastFetchedAt(Date.now());
     } catch (error: any) {
       console.error('Failed to load notifications', error);
       setLoadError(error?.message || 'Failed to load notifications.');
@@ -50,6 +52,16 @@ export const useNotifications = () => {
       setLoading(false);
     }
   }, [user, toast]);
+
+  // Safety net: if loading takes too long, stop spinner and show a timeout message
+  useEffect(() => {
+    if (!loading) return;
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setLoadError((prev) => prev || 'Notifications timed out. Please refresh.');
+    }, 6000);
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   const handleNewNotification = useCallback((notification: any) => {
     setNotifications(prev => [notification, ...prev]);
@@ -186,6 +198,7 @@ export const useNotifications = () => {
     filteredNotifications,
     loading,
     loadError,
+    lastFetchedAt,
     activeTab,
     setActiveTab,
     markAllAsRead,

@@ -18,6 +18,7 @@ const Notifications = () => {
     filteredNotifications, 
     loading, 
     loadError,
+    lastFetchedAt,
     activeTab, 
     setActiveTab, 
     markAllAsRead, 
@@ -85,6 +86,8 @@ const Notifications = () => {
                         activeTab={activeTab}
                         markAsRead={markAsRead}
                         navigate={navigate}
+                    lastFetchedAt={lastFetchedAt}
+                    loadError={loadError}
                     />
                 </div>
             </motion.div>

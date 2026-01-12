@@ -13,6 +13,8 @@ interface NotificationsListProps {
   activeTab: string;
   markAsRead: (id: string) => Promise<void>;
   navigate: (path: string) => void;
+  lastFetchedAt?: number | null;
+  loadError?: string | null;
 }
 
 export const NotificationsList = ({
@@ -20,8 +22,18 @@ export const NotificationsList = ({
   loading,
   activeTab,
   markAsRead,
-  navigate
+  navigate,
+  lastFetchedAt,
+  loadError
 }: NotificationsListProps) => {
+
+  if (loadError && !loading) {
+    return (
+      <div className="p-4 text-center text-sm text-red-300 bg-red-500/5">
+        {loadError}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -44,6 +56,9 @@ export const NotificationsList = ({
             ? "You don't have any unread notifications."
             : `You don't have any ${activeTab} notifications.`}
         </p>
+        {lastFetchedAt && (
+          <p className="text-[11px] text-muted-foreground mt-2">Last checked: {new Date(lastFetchedAt).toLocaleTimeString()}</p>
+        )}
       </div>
     );
   }
