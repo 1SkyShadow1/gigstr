@@ -572,9 +572,9 @@ const GigDetail = () => {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <Button className="w-full h-12 text-lg shadow-glow" onClick={() => setShowApplyDialog(true)}>
-                                    Apply Now
-                                </Button>
+                              <Button type="button" className="w-full h-12 text-lg shadow-glow" onClick={() => setShowApplyDialog(true)}>
+                                Apply Now
+                              </Button>
                                 <p className="text-xs text-center text-muted-foreground">
                                     By applying you agree to our Terms of Service.
                                 </p>
@@ -598,57 +598,67 @@ const GigDetail = () => {
 
             {/* Apply Dialog */}
             <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-                <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[600px]">
-                    <DialogHeader>
-                        <DialogTitle>Apply for {gig.title}</DialogTitle>
-                        <DialogDescription>
-                            Submit your proposal for this opportunity.
-                        </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Cover Letter</label>
-                            <Textarea 
-                                placeholder="Explain why you're the best fit for this gig..." 
-                                className="bg-white/5 border-white/10 min-h-[150px]"
-                                value={proposal}
-                                onChange={(e) => setProposal(e.target.value)}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Expected Rate</label>
-                                <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <Input 
-                                        type="number" 
-                                        placeholder={gig.price?.toString() || '0'} 
-                                        className="pl-9 bg-white/5 border-white/10"
-                                        value={expectedRate}
-                                        onChange={(e) => setExpectedRate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Availability</label>
-                                <Input 
-                                    placeholder="Immediate" 
-                                    className="bg-white/5 border-white/10"
-                                    value={availability}
-                                    onChange={(e) => setAvailability(e.target.value)} 
-                                />
-                            </div>
-                        </div>
+              <DialogContent className="bg-[#0a0a0a] border-white/10 text-white sm:max-w-[600px]">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!applying) {
+                      handleApply();
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <DialogHeader>
+                    <DialogTitle>Apply for {gig.title}</DialogTitle>
+                    <DialogDescription>
+                      Submit your proposal for this opportunity.
+                    </DialogDescription>
+                  </DialogHeader>
+                        
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Cover Letter</label>
+                      <Textarea 
+                        placeholder="Explain why you're the best fit for this gig..." 
+                        className="bg-white/5 border-white/10 min-h-[150px]"
+                        value={proposal}
+                        onChange={(e) => setProposal(e.target.value)}
+                      />
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                        <label className="text-sm font-medium">Expected Rate</label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input 
+                            type="number" 
+                            placeholder={gig.price?.toString() || '0'} 
+                            className="pl-9 bg-white/5 border-white/10"
+                            value={expectedRate}
+                            onChange={(e) => setExpectedRate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                       <div className="space-y-2">
+                        <label className="text-sm font-medium">Availability</label>
+                        <Input 
+                          placeholder="Immediate" 
+                          className="bg-white/5 border-white/10"
+                          value={availability}
+                          onChange={(e) => setAvailability(e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowApplyDialog(false)} className="border-white/10 hover:bg-white/5">Cancel</Button>
-                        <Button onClick={handleApply} disabled={applying} className="shadow-preview">
-                            {applying ? 'Sending...' : 'Submit Application'} <Send className="w-4 h-4 ml-2" />
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setShowApplyDialog(false)} className="border-white/10 hover:bg-white/5">Cancel</Button>
+                    <Button type="submit" disabled={applying} className="shadow-preview">
+                      {applying ? 'Sending...' : 'Submit Application'} <Send className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
             </Dialog>
         </div>
     </AnimatedPage>
