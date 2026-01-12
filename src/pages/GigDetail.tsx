@@ -99,6 +99,8 @@ const GigDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const profileName = () => user?.email || 'Someone';
+
   const fetchGigData = useCallback(async () => {
     // Throttle to avoid overlapping/rapid fetch loops that can exhaust the browser
     const now = Date.now();
@@ -260,6 +262,20 @@ const GigDetail = () => {
           .insert(newApplication);
 
       if (error) throw error;
+
+        // Notify the gig owner about the new application (only if applicant isn't the owner)
+        if (gig.client_id && gig.client_id !== user.id) {
+          const { error: notifError } = await supabase.from('notifications').insert({
+            user_id: gig.client_id,
+            title: 'New application received',
+            message: `${profileName() || 'A worker'} applied to "${gig.title}"`,
+            type: 'application',
+            link: `/gigs/${gig.id}`,
+          });
+          if (notifError) {
+            console.error('Failed to create notification', notifError);
+          }
+        }
 
       toast({ title: "Application sent!", description: "Good luck!" });
       setShowApplyDialog(false);

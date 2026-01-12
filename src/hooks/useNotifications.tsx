@@ -36,9 +36,10 @@ export const useNotifications = () => {
       if (error) throw error;
       setNotifications(data || []);
     } catch (error: any) {
+      console.error('Failed to load notifications', error);
       toast({
         title: 'Error',
-        description: 'Failed to load notifications. Please try again.',
+        description: error?.message || 'Failed to load notifications. Please try again.',
         variant: 'destructive',
       });
     } finally {
