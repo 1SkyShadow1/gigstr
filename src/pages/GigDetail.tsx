@@ -76,7 +76,8 @@ const GigDetail = () => {
   const [application, setApplication] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [applications, setApplications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [proposal, setProposal] = useState('');
@@ -106,7 +107,11 @@ const GigDetail = () => {
     }
     isFetchingRef.current = true;
     setErrorMessage(null);
-    setLoading(true);
+    if (initialLoad) {
+      setInitialLoad(true);
+    } else {
+      setRefreshing(true);
+    }
     try {
       if (!id) {
         throw new Error("Gig ID is missing");
@@ -159,9 +164,10 @@ const GigDetail = () => {
     } finally {
       lastFetchRef.current = Date.now();
       isFetchingRef.current = false;
-      setLoading(false);
+      setInitialLoad(false);
+      setRefreshing(false);
     }
-  }, [id, user, toast]);
+  }, [id, user, toast, initialLoad]);
 
   useEffect(() => {
     fetchGigData();
@@ -411,7 +417,7 @@ const GigDetail = () => {
     setRatingComment('');
   };
 
-  if (loading || isLoading) {
+  if (initialLoad || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
