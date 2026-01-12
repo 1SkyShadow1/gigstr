@@ -20,14 +20,17 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
       setLoading(false);
+      setLoadError(null);
       return;
     }
     try {
       setLoading(true);
+      setLoadError(null);
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -37,6 +40,7 @@ export const useNotifications = () => {
       setNotifications(data || []);
     } catch (error: any) {
       console.error('Failed to load notifications', error);
+      setLoadError(error?.message || 'Failed to load notifications.');
       toast({
         title: 'Error',
         description: error?.message || 'Failed to load notifications. Please try again.',
@@ -181,6 +185,7 @@ export const useNotifications = () => {
     notifications,
     filteredNotifications,
     loading,
+    loadError,
     activeTab,
     setActiveTab,
     markAllAsRead,

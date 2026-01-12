@@ -17,6 +17,7 @@ const Notifications = () => {
     notifications, 
     filteredNotifications, 
     loading, 
+    loadError,
     activeTab, 
     setActiveTab, 
     markAllAsRead, 
@@ -64,6 +65,11 @@ const Notifications = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
             >
+              {loadError && (
+                <div className="p-3 text-sm text-red-300 bg-red-500/10 border-b border-red-500/20">
+                  {loadError}
+                </div>
+              )}
                 <NotificationFilters 
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
