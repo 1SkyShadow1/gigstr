@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle } from 'lucide-react';
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import type { Notification } from '@/utils/notificationUtils';
 
 interface NotificationsListProps {
