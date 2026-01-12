@@ -77,6 +77,7 @@ const GigDetail = () => {
   const [isOwner, setIsOwner] = useState(false);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [proposal, setProposal] = useState('');
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -96,58 +97,65 @@ const GigDetail = () => {
   const { toast } = useToast();
 
   const fetchGigData = useCallback(async () => {
+    setErrorMessage(null);
+    setLoading(true);
     try {
-      setLoading(true);
-      
       if (!id) {
         throw new Error("Gig ID is missing");
       }
-      
+
       const { data: gigData, error: gigError } = await supabase
         .from('gigs')
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (gigError) throw gigError;
       if (!gigData) throw new Error("Gig not found");
-      
+
       setGig(gigData);
-      
+
       if (user) {
         const isUserOwner = user.id === gigData.client_id;
         setIsOwner(isUserOwner);
-        
+
         if (isUserOwner) {
           const { data: appsData, error: appsError } = await supabase
             .from('applications')
             .select('*')
             .eq('gig_id', id);
-          if (!appsError) setApplications(appsData || []);
+          if (appsError) throw appsError;
+          setApplications(appsData || []);
+          setApplication(null);
         } else {
           const { data: appData, error: appError } = await supabase
             .from('applications')
             .select('*')
             .eq('gig_id', id)
             .eq('worker_id', user.id)
-            .single();
-          if (!appError) setApplication(appData);
+            .maybeSingle();
+          if (appError) throw appError;
+          setApplication(appData || null);
+          setApplications([]);
         }
+      } else {
+        setIsOwner(false);
+        setApplications([]);
+        setApplication(null);
       }
-      
     } catch (error: any) {
       console.error(error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      const message = error?.message || 'Unable to load this gig right now.';
+      setErrorMessage(message);
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   }, [id, user, toast]);
 
   useEffect(() => {
-    if (!isLoading) {
-      fetchGigData();
-    }
-  }, [id, isLoading, user, fetchGigData]);
+    fetchGigData();
+  }, [fetchGigData]);
 
   // Fetch similar gigs after gig is loaded
   useEffect(() => {
@@ -398,6 +406,23 @@ const GigDetail = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gigstr-purple"></div>
       </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <AnimatedPage>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold">Unable to load gig</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">{errorMessage}</p>
+            <div className="flex justify-center gap-3">
+              <Button variant="outline" onClick={() => navigate('/gigs')}>Back to gigs</Button>
+              <Button onClick={fetchGigData}>Try again</Button>
+            </div>
+          </div>
+        </div>
+      </AnimatedPage>
     );
   }
 

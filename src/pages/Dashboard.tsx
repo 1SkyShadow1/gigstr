@@ -138,7 +138,9 @@ const Dashboard = () => {
                     <p className="text-muted-foreground mt-1">Here's what's happening with your gigs today.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="hidden sm:flex">View Profile</Button>
+                    <Button variant="outline" className="hidden sm:flex" asChild>
+                        <Link to="/profile">View Profile</Link>
+                    </Button>
                     <Button variant="glow" asChild>
                         <Link to="/create-gig">
                             <Plus className="mr-2 h-4 w-4" /> New Gig
