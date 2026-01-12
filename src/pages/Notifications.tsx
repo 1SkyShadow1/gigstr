@@ -19,6 +19,7 @@ const Notifications = () => {
     loading, 
     loadError,
     lastFetchedAt,
+    retryFetch,
     activeTab, 
     setActiveTab, 
     markAllAsRead, 
@@ -68,7 +69,10 @@ const Notifications = () => {
             >
               {loadError && (
                 <div className="p-3 text-sm text-red-300 bg-red-500/10 border-b border-red-500/20">
-                  {loadError}
+                  <div className="flex items-center justify-between">
+                    <span>{loadError}</span>
+                    <Button size="sm" variant="outline" className="h-8" onClick={retryFetch}>Retry</Button>
+                  </div>
                 </div>
               )}
                 <NotificationFilters 
@@ -88,6 +92,7 @@ const Notifications = () => {
                         navigate={navigate}
                     lastFetchedAt={lastFetchedAt}
                     loadError={loadError}
+                        onRetry={retryFetch}
                     />
                 </div>
             </motion.div>

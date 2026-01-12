@@ -15,6 +15,7 @@ interface NotificationsListProps {
   navigate: (path: string) => void;
   lastFetchedAt?: number | null;
   loadError?: string | null;
+  onRetry?: () => void;
 }
 
 export const NotificationsList = ({
@@ -24,13 +25,15 @@ export const NotificationsList = ({
   markAsRead,
   navigate,
   lastFetchedAt,
-  loadError
+  loadError,
+  onRetry
 }: NotificationsListProps) => {
 
   if (loadError && !loading) {
     return (
-      <div className="p-4 text-center text-sm text-red-300 bg-red-500/5">
-        {loadError}
+      <div className="p-4 text-center text-sm text-red-300 bg-red-500/5 space-y-3">
+        <div>{loadError}</div>
+        {onRetry && <Button size="sm" variant="outline" onClick={onRetry}>Retry</Button>}
       </div>
     );
   }

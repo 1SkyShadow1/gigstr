@@ -22,6 +22,7 @@ export const useNotifications = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -40,6 +41,7 @@ export const useNotifications = () => {
       if (error) throw error;
       setNotifications(data || []);
       setLastFetchedAt(Date.now());
+      setLoadError(null);
     } catch (error: any) {
       console.error('Failed to load notifications', error);
       setLoadError(error?.message || 'Failed to load notifications.');
@@ -199,6 +201,7 @@ export const useNotifications = () => {
     loading,
     loadError,
     lastFetchedAt,
+    retryFetch: () => { setRetryCount(c => c + 1); fetchNotifications(); },
     activeTab,
     setActiveTab,
     markAllAsRead,
