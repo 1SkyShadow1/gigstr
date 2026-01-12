@@ -655,6 +655,17 @@ const GigDetail = () => {
                         />
                       </div>
                     </div>
+                    <div className="flex items-start gap-2 rounded-lg bg-white/5 border border-white/10 p-3">
+                      <Input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4"
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        I agree to the <a href="/terms" className="text-primary hover:underline">Terms of Service</a> and understand my application will be shared with the client.
+                      </div>
+                    </div>
                   </div>
 
                   <DialogFooter>
