@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -93,10 +93,18 @@ const GigDetail = () => {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [ratingValue, setRatingValue] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
+  const isFetchingRef = useRef(false);
+  const lastFetchRef = useRef(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const fetchGigData = useCallback(async () => {
+    // Throttle to avoid overlapping/rapid fetch loops that can exhaust the browser
+    const now = Date.now();
+    if (isFetchingRef.current || now - lastFetchRef.current < 1500) {
+      return;
+    }
+    isFetchingRef.current = true;
     setErrorMessage(null);
     setLoading(true);
     try {
@@ -149,6 +157,8 @@ const GigDetail = () => {
       setErrorMessage(message);
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
+      lastFetchRef.current = Date.now();
+      isFetchingRef.current = false;
       setLoading(false);
     }
   }, [id, user, toast]);
