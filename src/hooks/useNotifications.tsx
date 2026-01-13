@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,11 +17,6 @@ async function sendPushNotification(user_id: string, notification: { title: stri
 export const useNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  // Use a ref for toast to avoid dependency loops if useToast returns a new function on every render
-  const toastRef = useRef(toast);
-  useEffect(() => {
-    toastRef.current = toast;
-  }, [toast]);
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,7 +55,7 @@ export const useNotifications = () => {
       setLoadError(errorMessage);
       // Only toast on manual retry or critical failures, not on auto-load to avoid spam
       if (retryCount > 0) {
-        toastRef.current({
+        toast({
           title: 'Error',
           description: errorMessage,
           variant: 'destructive',
@@ -69,7 +64,8 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, retryCount]); // Depend on user and retryCount only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, retryCount]); // Depend on user and retryCount only. Exclude toast to avoid loops.
 
   // Safety net: if loading takes too long, stop spinner and show a timeout message
   useEffect(() => {
@@ -83,11 +79,12 @@ export const useNotifications = () => {
 
   const handleNewNotification = useCallback((notification: any) => {
     setNotifications(prev => [notification, ...prev]);
-    toastRef.current({
+    toast({
       title: notification.title,
       description: notification.message,
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Exclude toast
 
   // Initial Fetch & Real-time Subscription
   useEffect(() => {
@@ -165,7 +162,7 @@ export const useNotifications = () => {
     let unsubscribe = () => {};
     try {
         unsubscribe = onMessage(messaging, (payload) => {
-          toastRef.current({
+          toast({
               title: payload.notification?.title || 'Notification',
               description: payload.notification?.body || '',
           });
