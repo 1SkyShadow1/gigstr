@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedPage from '@/components/AnimatedPage';
 import Header from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
+import { generateProposalWithGemini } from '@/lib/ai/gemini';
 
 const PRESETS = [
     { id: 'web-app', label: 'Web App MVP', data: { jobDescription: 'Build a React/Node SaaS MVP with auth and payments.', outcomes: 'Functional MVP ready for investors.', timeline: '4-6 weeks', budget: '45,000' } },
@@ -22,6 +23,7 @@ const PRESETS = [
 const ProposalAI = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+    const abortRef = useRef<AbortController | null>(null);
   
   const [jobDescription, setJobDescription] = useState('');
   const [clientName, setClientName] = useState('');
@@ -56,8 +58,7 @@ const ProposalAI = () => {
         toast({ title: "Downloaded", description: "Proposal saved as .txt file" });
   };
 
-  // Simulated AI Generation
-  const handleGenerate = () => {
+    const handleGenerate = async () => {
     if (!jobDescription) {
         toast({
             title: "Input Required",
@@ -69,83 +70,37 @@ const ProposalAI = () => {
 
     setIsGenerating(true);
     setGeneratedProposal('');
-
-        // Simulate thinking time
-        setTimeout(() => {
-                const random = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-
-                const toneOpeners: Record<string, string[]> = {
-                    professional: [
-                        `I reviewed your ${clientName || 'project'} requirements and mapped a clear delivery path.`,
-                        `Thanks for sharing the scope. I’ve delivered similar work and can execute with minimal friction.`
-                    ],
-                    persuasive: [
-                        `This is exactly the kind of problem I solve—let’s make this an easy win for your team.`,
-                        `If you want fast impact without hand-holding, I can drive this from brief to launch.`
-                    ],
-                    casual: [
-                        `Appreciate the details—this looks fun and right up my alley.`,
-                        `I can jump in and get you quick wins while keeping things simple.`
-                    ],
-                    urgent: [
-                        `Speed matters here. I can start immediately with a slim, high-impact plan.`,
-                        `Let’s move fast: I’ll ship a first milestone in days, not weeks.`
-                    ],
-                };
-
-                const deliverables = [
-                    'Discovery & success criteria (fast alignment)',
-                    'Design/architecture + clear milestones',
-                    'Implementation with weekly demos',
-                    'QA + acceptance sign-off',
-                    'Launch + 14 days of post-launch fixes'
-                ];
-
-                const risks = [
-                    'Scope creep without acceptance criteria',
-                    'Slow feedback cycles delaying delivery',
-                    'Unclear success metrics for go-live'
-                ];
-
-                const outcomeLine = outcomes ? `Outcomes to hit: ${outcomes}` : 'We’ll agree measurable outcomes (traffic, conversion, uptime, or SLAs).';
-                const budgetLine = budget ? `Estimated investment: R ${budget}` : 'Investment: we can price per milestone or fixed-fee once scope is locked.';
-                const timelineLine = timeline ? `Target timeline: ${timeline}` : 'I’ll propose a 2-3 phase plan with clear checkpoints.';
-                const toneOpening = random(toneOpeners[tone] || toneOpeners.professional);
-                const lengthNote = length === 'detailed' ? 'Detail level: expanded (includes risks and guardrails).' : 'Detail level: concise summary.';
-
-                const body = [
-                    toneOpening,
-                    outcomeLine,
-                    timelineLine,
-                    budgetLine,
-                    '',
-                    'Plan & deliverables:',
-                    ...deliverables.map(d => `• ${d}`),
-                    '',
-                    'Risk & guardrails:',
-                    ...risks.map(r => `• ${r}`),
-                    '• Change-orders only if new scope is added (keeps budget safe).',
-                    '',
-                    'Why me:',
-                    `• Relevant experience: ${jobDescription.slice(0, 80) || 'I’ve shipped similar projects end-to-end.'}`,
-                    '• Communication: async updates + weekly demo cadence.',
-                    '• Tooling: Vercel/Supabase/Vite stack friendly.',
-                    '',
-                    'Next steps:',
-                    '1) 15-min alignment call.',
-                    '2) Lock scope + milestones.',
-                    '3) Kickoff within 48 hours.',
-                    '',
-                    portfolio ? `Work samples: ${portfolio}` : 'Work samples available on request.',
-                    lengthNote,
-                ].join('\n');
-
-                const result = `Dear ${clientName || 'Hiring Manager'},\n\n${body}\n\nLooking forward to collaborating.\nBest,\n${user?.email?.split('@')[0] || 'Freelancer'}`;
-
-                setGeneratedProposal(result);
-                setIsGenerating(false);
-        }, 1200);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+        const proposal = await generateProposalWithGemini({
+            jobDescription,
+            outcomes,
+            budget,
+            timeline,
+            tone: tone as 'professional' | 'persuasive' | 'casual' | 'urgent',
+            length,
+            portfolio,
+            clientName,
+            userHandle: user?.email?.split('@')[0] || undefined,
+        }, controller.signal);
+        setGeneratedProposal(proposal);
+        toast({ title: "Proposal drafted", description: "Powered by Gemini." });
+    } catch (error: any) {
+        const message = error?.name === 'AbortError'
+            ? 'Request timed out. Please try again.'
+            : (error?.message || 'Could not generate a proposal right now.');
+        toast({ title: "AI error", description: message, variant: "destructive" });
+    } finally {
+                abortRef.current = null;
+        setIsGenerating(false);
+    }
   };
+
+    useEffect(() => {
+        return () => abortRef.current?.abort();
+    }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedProposal);

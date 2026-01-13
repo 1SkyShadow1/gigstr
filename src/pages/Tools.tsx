@@ -1,28 +1,42 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { 
-  ClipboardList, 
-  FileText, 
-  BarChart3, 
-  PenLine,
-  Receipt,
-  Shield,
-  Sparkles,
-  Zap,
-  Timer,
-  Layout,
-  Calendar,
-  Calculator,
-  Users,
+    ClipboardList, 
+    FileText, 
+    BarChart3, 
+    PenLine,
+    Receipt,
+    Shield,
+    Sparkles,
+    Zap,
+    Timer,
+    Layout,
+    Calendar,
+    Calculator,
+    Users,
+    Star,
 } from 'lucide-react';
 import AnimatedPage from '@/components/AnimatedPage';
 import { motion } from 'framer-motion';
 
+type Tool = {
+    id: string;
+    title: string;
+    description: string;
+    icon: React.ComponentType<any>;
+    path: string;
+    badge?: string;
+    category: 'finance' | 'project' | 'growth';
+    color: string;
+    bg: string;
+};
+
 // Tool data for search/filter/sort/favorite
-const TOOL_LIST = [
+const TOOL_LIST: Tool[] = [
   {
+        id: 'tax-vault',
     title: "Tax Vault",
     description: "Track expenses and estimate quarterly tax savings",
     icon: Receipt,
@@ -33,6 +47,7 @@ const TOOL_LIST = [
     bg: "bg-emerald-500/10"
   },
   {
+        id: 'focus-timer',
     title: "Focus Timer",
     description: "Track work hours and billable time directly.",
     icon: Timer,
@@ -42,6 +57,7 @@ const TOOL_LIST = [
     bg: "bg-orange-500/10"
   },
   {
+        id: 'showcase-builder',
     title: "Showcase Builder",
     description: "Create a visual portfolio and share your work.",
     icon: Layout,
@@ -51,6 +67,7 @@ const TOOL_LIST = [
     bg: "bg-pink-500/10"
   },
   {
+        id: 'sync-up',
     title: "Sync Up",
     description: "Meeting scheduler & calendar integration.",
     icon: Calendar,
@@ -60,6 +77,7 @@ const TOOL_LIST = [
     bg: "bg-blue-600/10"
   },
   {
+        id: 'rate-architect',
     title: "Rate Architect",
     description: "Calculate your ideal hourly rate based on lifestyle.",
     icon: Calculator,
@@ -69,6 +87,7 @@ const TOOL_LIST = [
     bg: "bg-emerald-600/10"
   },
   {
+        id: 'team-bridge',
     title: "Team Bridge",
     description: "Secure client portals for files & updates.",
     icon: Users,
@@ -78,6 +97,7 @@ const TOOL_LIST = [
     bg: "bg-indigo-600/10"
   },
   {
+        id: 'proposal-ai',
     title: "Proposal Copilot",
     description: "AI-powered proposal generator to win more gigs instantly.",
     icon: Sparkles,
@@ -88,6 +108,7 @@ const TOOL_LIST = [
     bg: "bg-purple-500/10"
   },
   {
+        id: 'invoicing',
     title: "Smart Invoicing",
         description: "Create invoices, payment links, and recurring billing",
     icon: FileText,
@@ -98,6 +119,7 @@ const TOOL_LIST = [
     bg: "bg-blue-500/10"
   },
     {
+                id: 'client-center',
         title: "Client Command Center",
         description: "CRM-lite pipeline with follow-ups and value tracking",
         icon: ClipboardList,
@@ -108,6 +130,7 @@ const TOOL_LIST = [
         bg: "bg-emerald-500/10"
     },
     {
+        id: 'pricing-scope',
         title: "Pricing & Scope Engine",
         description: "Tiered packages, SOW guardrails, and change-order prep",
         icon: Receipt,
@@ -118,6 +141,7 @@ const TOOL_LIST = [
         bg: "bg-amber-500/10"
     },
   {
+        id: 'project-management',
     title: "Project Management",
     description: "Organize your projects with tasks, milestones, and deadlines",
     icon: ClipboardList,
@@ -127,6 +151,7 @@ const TOOL_LIST = [
     bg: "bg-green-500/10"
   },
   {
+        id: 'analytics',
     title: "Analytics Dashboard",
     description: "View insights about your earnings, time spent, and productivity",
     icon: BarChart3,
@@ -136,6 +161,7 @@ const TOOL_LIST = [
     bg: "bg-orange-500/10"
   },
   {
+        id: 'contracts',
     title: "Contract Creator",
     description: "Create professional contracts for your freelance work",
     icon: PenLine,
@@ -146,6 +172,7 @@ const TOOL_LIST = [
     bg: "bg-red-500/10"
   },
   {
+        id: 'trustlock',
     title: "TrustLock Agreement",
     description: "Create secure, verified agreements and resolve disputes with confidence.",
     icon: Shield,
@@ -159,6 +186,91 @@ const TOOL_LIST = [
 
 const Tools = () => {
     const navigate = useNavigate();
+        const [searchTerm, setSearchTerm] = useState('');
+        const [favoriteOnly, setFavoriteOnly] = useState(false);
+        const [favorites, setFavorites] = useState<string[]>(() => {
+            try {
+                const stored = localStorage.getItem('toolFavorites');
+                return stored ? JSON.parse(stored) : [];
+            } catch (error) {
+                console.error('Failed to parse favorites', error);
+                return [];
+            }
+        });
+
+        const handleOpenTool = (path: string, id: string) => {
+            navigate(path);
+        };
+
+        const handleToggleFavorite = (id: string) => {
+            setFavorites((prev) => {
+                const updated = prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id];
+                localStorage.setItem('toolFavorites', JSON.stringify(updated));
+                return updated;
+            });
+        };
+
+        const filterTools = useCallback(
+            (category?: Tool['category']) => {
+                const term = searchTerm.trim().toLowerCase();
+                return TOOL_LIST.filter((tool) => {
+                    const matchesCategory = !category || tool.category === category;
+                    const matchesSearch = !term || tool.title.toLowerCase().includes(term) || tool.description.toLowerCase().includes(term);
+                    const matchesFavorite = !favoriteOnly || favorites.includes(tool.id);
+                    return matchesCategory && matchesSearch && matchesFavorite;
+                });
+            },
+            [favorites, favoriteOnly, searchTerm]
+        );
+
+        const renderTools = (category?: Tool['category']) => {
+            const list = filterTools(category);
+            if (!list.length) {
+                return (
+                    <div className="rounded-2xl border border-border bg-muted/40 p-6 text-center text-muted-foreground">
+                        No tools found. Try a different filter or clear your search.
+                    </div>
+                );
+            }
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {list.map((tool, index) => (
+                        <motion.div
+                            key={tool.id}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => handleOpenTool(tool.path, tool.id)}
+                            className="group cursor-pointer bg-card border border-border hover:border-primary/50 p-6 rounded-2xl transition-all hover:shadow-lg relative"
+                        >
+                            <button
+                                aria-label="Toggle favorite"
+                                className={`absolute right-3 top-3 rounded-full p-2 transition-colors ${favorites.includes(tool.id) ? 'text-amber-400 bg-amber-400/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'}`}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleToggleFavorite(tool.id);
+                                }}
+                            >
+                                <Star size={16} fill={favorites.includes(tool.id) ? 'currentColor' : 'none'} />
+                            </button>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className={`w-12 h-12 ${tool.bg} ${tool.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                    <tool.icon size={24} />
+                                </div>
+                                {tool.badge && (
+                                    <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
+                                        {tool.badge}
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{tool.title}</h3>
+                            <p className="text-muted-foreground text-sm leading-relaxed">{tool.description}</p>
+                        </motion.div>
+                    ))}
+                </div>
+            );
+        };
 
     return (
         <AnimatedPage>
@@ -171,11 +283,35 @@ const Tools = () => {
                     </div>
                     {/* Quick Action Bar */}
                     <div className="flex gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors">
-                            <Zap size={18} /> Quick Action
+                                                <button
+                                                    className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl font-medium hover:bg-primary/20 transition-colors"
+                                                    onClick={() => handleOpenTool('/tools/proposal-ai', 'proposal-ai')}
+                                                >
+                                                        <Zap size={18} /> Quick Action
                         </button>
                     </div>
                 </div>
+
+                                {/* Filters */}
+                                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+                                    <div className="w-full md:w-1/2">
+                                        <Input
+                                            placeholder="Search tools by name or description"
+                                            value={searchTerm}
+                                            onChange={(event) => setSearchTerm(event.target.value)}
+                                            className="bg-card border-border"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setFavoriteOnly((prev) => !prev)}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${favoriteOnly ? 'border-amber-400/60 bg-amber-400/10 text-amber-400' : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/40'}`}
+                                        >
+                                            <Star size={14} fill={favoriteOnly ? 'currentColor' : 'none'} />
+                                            Favorites only
+                                        </button>
+                                    </div>
+                                </div>
 
                 {/* Hero Feature */}
                 <div className="grid md:grid-cols-3 gap-6 mb-10">
@@ -233,85 +369,19 @@ const Tools = () => {
                     </TabsList>
 
                     <TabsContent value="all" className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {TOOL_LIST.map((tool, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    onClick={() => navigate(tool.path)}
-                                    className="group cursor-pointer bg-card border border-border hover:border-primary/50 p-6 rounded-2xl transition-all hover:shadow-lg"
-                                >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className={`w-12 h-12 ${tool.bg} ${tool.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                                            <tool.icon size={24} />
-                                        </div>
-                                        {tool.badge && (
-                                            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
-                                                {tool.badge}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{tool.title}</h3>
-                                    <p className="text-muted-foreground text-sm leading-relaxed">{tool.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {renderTools()}
                     </TabsContent>
                     
                     <TabsContent value="finance">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {TOOL_LIST.filter(t => t.category === 'finance').map((tool, index) => (
-                                <motion.div
-                                    key={index}
-                                    onClick={() => navigate(tool.path)}
-                                    className="group cursor-pointer bg-card border border-border hover:border-primary/50 p-6 rounded-2xl transition-all"
-                                >
-                                    <div className={`w-12 h-12 ${tool.bg} ${tool.color} rounded-2xl flex items-center justify-center mb-4`}>
-                                        <tool.icon size={24} />
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2">{tool.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{tool.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {renderTools('finance')}
                     </TabsContent>
 
                     <TabsContent value="project">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {TOOL_LIST.filter(t => t.category === 'project').map((tool, index) => (
-                                <motion.div
-                                    key={index}
-                                    onClick={() => navigate(tool.path)}
-                                    className="group cursor-pointer bg-card border border-border hover:border-primary/50 p-6 rounded-2xl transition-all"
-                                >
-                                    <div className={`w-12 h-12 ${tool.bg} ${tool.color} rounded-2xl flex items-center justify-center mb-4`}>
-                                        <tool.icon size={24} />
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2">{tool.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{tool.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {renderTools('project')}
                     </TabsContent>
 
                     <TabsContent value="growth">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {TOOL_LIST.filter(t => t.category === 'growth').map((tool, index) => (
-                                <motion.div
-                                    key={index}
-                                    onClick={() => navigate(tool.path)}
-                                    className="group cursor-pointer bg-card border border-border hover:border-primary/50 p-6 rounded-2xl transition-all"
-                                >
-                                    <div className={`w-12 h-12 ${tool.bg} ${tool.color} rounded-2xl flex items-center justify-center mb-4`}>
-                                        <tool.icon size={24} />
-                                    </div>
-                                    <h3 className="text-lg font-bold mb-2">{tool.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{tool.description}</p>
-                                </motion.div>
-                            ))}
-                        </div>
+                        {renderTools('growth')}
                     </TabsContent>
                 </Tabs>
             </div>
