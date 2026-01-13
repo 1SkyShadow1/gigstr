@@ -95,6 +95,11 @@ const Notifications = () => {
                         onRetry={retryFetch}
                     />
                 </div>
+
+                <div className="p-4 flex items-center justify-between text-xs text-muted-foreground border-t border-white/10 bg-black/30">
+                  <span>State: user {user?.id ? 'ok' : 'missing'} • loading {loading ? 'true' : 'false'} • error {loadError ? 'yes' : 'no'} • last fetch {lastFetchedAt ? new Date(lastFetchedAt).toLocaleTimeString() : '—'}</span>
+                  <Button size="sm" variant="outline" className="h-8" onClick={retryFetch}>Force refresh</Button>
+                </div>
             </motion.div>
         </div>
     </AnimatedPage>

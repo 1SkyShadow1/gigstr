@@ -61,7 +61,7 @@ export const useNotifications = () => {
     const timeout = setTimeout(() => {
       setLoading(false);
       setLoadError((prev) => prev || 'Notifications timed out. Please refresh.');
-    }, 6000);
+    }, 3000);
     return () => clearTimeout(timeout);
   }, [loading]);
 
