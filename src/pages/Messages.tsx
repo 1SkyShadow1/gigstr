@@ -92,6 +92,104 @@ const Messages = () => {
     });
   }, [chats]);
 
+  const fetchChats = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+            *,
+            sender:profiles!sender_id(id, first_name, last_name, avatar_url),
+            receiver:profiles!receiver_id(id, first_name, last_name, avatar_url)
+        `)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const conversationMap = new Map();
+      
+      data.forEach(msg => {
+          const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+          if (!conversationMap.has(partnerId)) {
+               const partner = msg.sender_id === user.id ? msg.receiver : msg.sender;
+               conversationMap.set(partnerId, {
+                   id: partnerId,
+                   recipient_id: partnerId,
+                   name: `${partner?.first_name || 'Unknown'} ${partner?.last_name || ''}`.trim(),
+                   avatar: partner?.avatar_url,
+                   lastMessage: msg.content,
+                   time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }),
+                   unread: msg.receiver_id === user.id && !msg.read ? 1 : 0,
+                   timestamp: new Date(msg.created_at)
+               });
+          } else {
+               const existing = conversationMap.get(partnerId);
+               if (msg.receiver_id === user.id && !msg.read) {
+                   existing.unread += 1;
+               }
+          }
+      });
+
+      setChats(Array.from(conversationMap.values()));
+      setLoading(false);
+
+    } catch (e) {
+      console.error(e);
+      setLoading(false);
+    }
+  }, [user]);
+
+  const fetchMessages = useCallback(async (recipientId: string) => {
+    if (!user) return;
+    setIsLoadingMessages(true);
+    setErrorLoadingMessages(false);
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+      
+      // Mark as read
+      const unreadIds = data?.filter((m: any) => m.receiver_id === user.id && !m.read).map((m: any) => m.id) || [];
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .in('id', unreadIds);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setErrorLoadingMessages(true);
+      toast({
+        title: "Error",
+        description: "Failed to load messages",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [user, toast]);
+
+  const handleNewMessage = useCallback((payload: any) => {
+    const currentChat = filteredChats[activeChat || 0];
+    if (currentChat && (payload.sender_id === currentChat.recipient_id || payload.receiver_id === currentChat.recipient_id)) {
+      setMessages((prev: any) => [...prev, payload]);
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      fetchChats();
+      toast({
+        title: "New Message",
+        description: "You have a new message",
+      });
+    }
+  }, [activeChat, filteredChats, fetchChats, toast]);
+
   const fetchRecipientProfile = useCallback(async (recipientId: string) => {
     try {
       const { data, error } = await supabase
@@ -241,104 +339,6 @@ const Messages = () => {
             }, 1000);
         }
     }, [user, fetchChats]);
-
-    const fetchChats = useCallback(async () => {
-        if (!user) return;
-        try {
-          const { data, error } = await supabase
-            .from('messages')
-            .select(`
-                *,
-                sender:profiles!sender_id(id, first_name, last_name, avatar_url),
-                receiver:profiles!receiver_id(id, first_name, last_name, avatar_url)
-            `)
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-
-          const conversationMap = new Map();
-          
-          data.forEach(msg => {
-              const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-              if (!conversationMap.has(partnerId)) {
-                   const partner = msg.sender_id === user.id ? msg.receiver : msg.sender;
-                   conversationMap.set(partnerId, {
-                       id: partnerId,
-                       recipient_id: partnerId,
-                       name: `${partner?.first_name || 'Unknown'} ${partner?.last_name || ''}`.trim(),
-                       avatar: partner?.avatar_url,
-                       lastMessage: msg.content,
-                       time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }),
-                       unread: msg.receiver_id === user.id && !msg.read ? 1 : 0,
-                       timestamp: new Date(msg.created_at)
-                   });
-              } else {
-                   const existing = conversationMap.get(partnerId);
-                   if (msg.receiver_id === user.id && !msg.read) {
-                       existing.unread += 1;
-                   }
-              }
-          });
-
-          setChats(Array.from(conversationMap.values()));
-          setLoading(false);
-
-        } catch (e) {
-          console.error(e);
-          setLoading(false);
-        }
-      }, [user]);
-    
-    const fetchMessages = useCallback(async (recipientId: string) => {
-        if (!user) return;
-        setIsLoadingMessages(true);
-        setErrorLoadingMessages(false);
-        
-        try {
-          const { data, error } = await supabase
-            .from('messages')
-            .select('*')
-            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
-            .order('created_at', { ascending: true });
-
-          if (error) throw error;
-          setMessages(data || []);
-          
-          // Mark as read
-          const unreadIds = data?.filter((m: any) => m.receiver_id === user.id && !m.read).map((m: any) => m.id) || [];
-          if (unreadIds.length > 0) {
-            await supabase
-              .from('messages')
-              .update({ read: true })
-              .in('id', unreadIds);
-          }
-        } catch (error) {
-          console.error('Error fetching messages:', error);
-          setErrorLoadingMessages(true);
-          toast({
-            title: "Error",
-            description: "Failed to load messages",
-            variant: "destructive"
-          });
-        } finally {
-          setIsLoadingMessages(false);
-        }
-      }, [user, toast]);
-
-    const handleNewMessage = useCallback((payload: any) => {
-      const currentChat = filteredChats[activeChat || 0];
-      if (currentChat && (payload.sender_id === currentChat.recipient_id || payload.receiver_id === currentChat.recipient_id)) {
-        setMessages((prev: any) => [...prev, payload]);
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        fetchChats();
-        toast({
-          title: "New Message",
-          description: "You have a new message",
-        });
-      }
-    }, [activeChat, filteredChats, fetchChats, toast]);
 
   // Send Message Handler
     const handleSendMessage = async (e?: React.FormEvent) => {
