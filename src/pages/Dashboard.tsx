@@ -57,9 +57,9 @@ const Dashboard = () => {
                     setLoadingDashboard(true);
                 }
                 const { data: gigsData, error: gigsError } = await supabase
-                        .from('gigs')
-                        .select('*')
-                        .or(`client_id.eq.${user.id},worker_id.eq.${user.id}`);
+                    .from('gigs')
+                    .select('*')
+                    .or(`client_id.eq.${user.id},worker_id.eq.${user.id}`);
 
                 if (gigsError) throw gigsError;
 
@@ -72,9 +72,9 @@ const Dashboard = () => {
                 setCompletionRate(total ? Math.round((completed.length / total) * 100) : 0);
 
                 const upcomingDeadlines = active
-                        .filter(g => g.due_date)
-                        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-                        .slice(0, 3);
+                    .filter(g => g.end_date || g.start_date)
+                    .sort((a, b) => new Date(a.end_date || a.start_date).getTime() - new Date(b.end_date || b.start_date).getTime())
+                    .slice(0, 3);
                 setUpcoming(upcomingDeadlines);
 
                 const { data: invoicesData, error: invoicesError } = await supabase
@@ -220,11 +220,11 @@ const Dashboard = () => {
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-medium truncate text-white group-hover:text-primary transition-colors">{gig.title || 'Untitled gig'}</h4>
                                     <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                                        <Clock size={12} /> {gig.due_date ? `Due ${new Date(gig.due_date).toLocaleDateString()}` : 'No due date set'}
+                                        <Clock size={12} /> {gig.end_date || gig.start_date ? `Due ${new Date(gig.end_date || gig.start_date).toLocaleDateString()}` : 'No due date set'}
                                     </p>
                                 </div>
                                 <div className="text-right">
-                                     <p className="font-bold text-sm">{gig.budget ? formatPrice(gig.budget) : '—'}</p>
+                                     <p className="font-bold text-sm">{gig.price ? formatPrice(gig.price) : '—'}</p>
                                      <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full capitalize">{gig.status || 'active'}</span>
                                 </div>
                             </div>
@@ -249,7 +249,7 @@ const Dashboard = () => {
                              <div key={gig.id || idx} className="flex items-center gap-3 text-sm">
                                  <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
                                  <span className="text-muted-foreground flex-1">{gig.title || 'Gig deadline'}</span>
-                                 <span className="text-white font-medium">{gig.due_date ? new Date(gig.due_date).toLocaleString() : 'Date pending'}</span>
+                                 <span className="text-white font-medium">{gig.end_date || gig.start_date ? new Date(gig.end_date || gig.start_date).toLocaleString() : 'Date pending'}</span>
                              </div>
                          ))}
                     </div>

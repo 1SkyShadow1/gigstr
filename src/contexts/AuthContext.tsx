@@ -45,8 +45,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      // If profile missing, create a starter profile so onboarding/guards work reliably
+      if (error || !data) {
+        const metadata = user?.user_metadata || {};
+        const starterProfile = {
+          id: userId,
+          first_name: typeof metadata.first_name === 'string' ? metadata.first_name : null,
+          last_name: typeof metadata.last_name === 'string' ? metadata.last_name : null,
+          username: typeof metadata.username === 'string' ? metadata.username : null,
+          role: typeof metadata.account_type === 'string' ? metadata.account_type : null,
+          skills: Array.isArray(metadata.skills) ? metadata.skills.filter(Boolean) : null,
+          onboarding_completed: false,
+        } as Partial<Profile>;
+
+        const { data: insertedProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert(starterProfile)
+          .select('*')
+          .single();
+
+        if (insertError) {
+          console.error('Error creating starter profile:', insertError);
+          return;
+        }
+
+        setProfile(insertedProfile);
         return;
       }
 
@@ -73,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error in profile fetch:', error);
     }
-  }, [user?.user_metadata?.skills]);
+  }, [user?.user_metadata]);
 
   useEffect(() => {
     // Set up listener for auth state changes

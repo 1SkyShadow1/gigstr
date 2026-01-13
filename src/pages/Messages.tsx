@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -113,10 +113,11 @@ function Messages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Move filteredChats to the very top after state declarations
-  const filteredChats = searchQuery 
-    ? chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : chats;
+  const filteredChats = useMemo(() => (
+    searchQuery 
+      ? chats.filter(chat => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : chats
+  ), [chats, searchQuery]);
 
   const setActiveChatByRecipient = useCallback((recipientId: string) => {
     setActiveChat(prev => {
@@ -205,6 +206,11 @@ function Messages() {
           .from('messages')
           .update({ read: true })
           .in('id', unreadIds);
+
+        // Clear unread badge for the active conversation locally
+        setChats((prev) => prev.map(chat =>
+          chat.recipient_id === recipientId ? { ...chat, unread: 0 } : chat
+        ));
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -356,10 +362,10 @@ function Messages() {
       fetchMessagesRef.current?.(filteredChats[activeChat].recipient_id);
     } else if (filteredChats.length > 0 && (activeChat === null || activeChat < 0 || activeChat >= filteredChats.length)) {
       setActiveChat(0); // fallback to first chat
+    } else if (filteredChats.length === 0 && activeChat !== null) {
+      setActiveChat(null); // reset when no chats available
     }
-    // Only depend on activeChat and filteredChats.length to avoid infinite loop
-    // eslint-disable-next-line
-  }, [activeChat, filteredChats.length]);
+  }, [activeChat, filteredChats]);
 
   // Fetch active gigs for the user (as client or worker)
   useEffect(() => {
@@ -450,10 +456,10 @@ function Messages() {
                         {loading ? (
                              <div className="flex justify-center p-4"><Loader /></div>
                         ) : filteredChats.length === 0 ? (
-                            <div className="text-center p-8 text-muted-foreground">
-                                <p>No conversations yet.</p>
-                                <Button variant="link" className="text-primary mt-2">Find a Gig</Button>
-                            </div>
+                          <div className="text-center p-8 text-muted-foreground">
+                            <p>No conversations yet.</p>
+                            <Button variant="link" className="text-primary mt-2" onClick={() => navigate('/gigs')}>Find a Gig</Button>
+                          </div>
                         ) : (
                             filteredChats.map((chat, index) => (
                                 <button
@@ -496,10 +502,10 @@ function Messages() {
 
             {/* Chat Area */}
             <div className="flex-1 flex flex-col bg-black/20 relative">
-                {activeChat !== null && filteredChats[activeChat] ? (
+              {activeChat !== null && filteredChats[activeChat] ? (
                     <>
                         {/* Chat Header */}
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-md sticky top-0 z-10">
+                  <div className="p-4 border-b border-white/10 flex flex-wrap gap-3 justify-between items-center bg-white/5 backdrop-blur-md sticky top-0 z-10">
                       <button
                         type="button"
                         onClick={() => activeRecipientId && navigate(`/profile/${activeRecipientId}`)}
@@ -631,15 +637,15 @@ function Messages() {
                             </form>
                         </div>
                     </>
-                ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50 p-8 text-center bg-black/20">
-                        <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 animate-pulse">
-                            <Send size={40} />
-                        </div>
-                        <h3 className="text-xl font-bold mb-2">Your Messages</h3>
-                        <p className="max-w-xs">Select a chat to start messaging or find a gig to connect with people.</p>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-70 p-8 text-center bg-black/20">
+                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                        <Send size={32} />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">No conversation selected</h3>
+                      <p className="max-w-xs text-sm text-muted-foreground">Pick a chat on the left or start a new one from a gig or profile.</p>
                     </div>
-                )}
+                  )}
             </div>
         </div>
     </AnimatedPage>

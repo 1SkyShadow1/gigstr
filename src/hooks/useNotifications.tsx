@@ -64,8 +64,7 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, retryCount]); // Depend on user and retryCount only. Exclude toast to avoid loops.
+  }, [user, retryCount, toast]);
 
   // Safety net: if loading takes too long, stop spinner and show a timeout message
   useEffect(() => {
@@ -83,8 +82,7 @@ export const useNotifications = () => {
       title: notification.title,
       description: notification.message,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Exclude toast
+  }, [toast]);
 
   // Initial Fetch & Real-time Subscription
   useEffect(() => {

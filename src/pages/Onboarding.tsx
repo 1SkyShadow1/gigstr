@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ const POPULAR_SKILLS = [
 ];
 
 const Onboarding = () => {
-  const { user, profile } = useAuth();
+    const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -62,13 +62,24 @@ const Onboarding = () => {
 
   const [customSkill, setCustomSkill] = useState('');
 
-  const handleNext = async () => {
+    const handleNext = async () => {
     if (currentStep < 3) {
       setCurrentStep(prev => prev + 1);
     } else {
       await completeOnboarding();
     }
   };
+
+    // Guard access for unauthenticated or already onboarded users
+    useEffect(() => {
+        if (!user) {
+            navigate('/auth', { replace: true });
+            return;
+        }
+        if (profile?.onboarding_completed) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [user, profile?.onboarding_completed, navigate]);
 
   const handleBack = () => {
     if (currentStep > 1) {

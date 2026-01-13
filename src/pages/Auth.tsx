@@ -99,6 +99,7 @@ const Auth = () => {
         skills: skillsList,
         location: values.location,
         experience_level: values.experience,
+        onboarding_completed: false,
       };
       await signUp(values.email, values.password, userData);
       // Don't auto-redirect, wait for auth state change or instruct user to check email

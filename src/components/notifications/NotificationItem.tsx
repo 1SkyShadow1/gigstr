@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getNotificationIcon, formatTimestamp, Notification } from '@/utils/notificationUtils';
 
@@ -15,12 +15,24 @@ export const NotificationItem = ({
   markAsRead,
   navigate
 }: NotificationItemProps) => {
+  const [marking, setMarking] = React.useState(false);
+
+  const handleMarkRead = async () => {
+    if (notification.read || marking) return;
+    setMarking(true);
+    try {
+      await markAsRead(notification.id);
+    } finally {
+      setMarking(false);
+    }
+  };
+
   return (
     <div 
       className={`p-4 flex gap-3 hover:bg-gray-50 ${!notification.read ? 'bg-gray-50' : ''}`}
       onClick={() => {
         if (!notification.read) {
-          markAsRead(notification.id);
+          handleMarkRead();
         }
         
         // Navigate to the appropriate page based on the notification type
@@ -41,9 +53,11 @@ export const NotificationItem = ({
             <span className="text-xs text-gray-500">
               {formatTimestamp(notification.created_at)}
             </span>
-            {notification.read && (
+            {notification.read ? (
               <Check className="h-4 w-4 text-gray-400" />
-            )}
+            ) : marking ? (
+              <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
+            ) : null}
           </div>
         </div>
         <p className={`text-sm ${!notification.read ? 'text-gray-800' : 'text-gray-600'}`}>

@@ -7,12 +7,13 @@ import { NotificationFilters } from '@/components/notifications/NotificationFilt
 import { useNotifications } from '@/hooks/useNotifications';
 import AnimatedPage from '@/components/AnimatedPage';
 import { motion } from 'framer-motion';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const Notifications = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [markingAll, setMarkingAll] = React.useState(false);
   const { 
     notifications, 
     filteredNotifications, 
@@ -34,6 +35,16 @@ const Notifications = () => {
     }
   }, [user, loading, navigate]);
 
+  const handleMarkAll = async () => {
+    if (markingAll || unreadCount === 0) return;
+    setMarkingAll(true);
+    try {
+      await markAllAsRead();
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -45,16 +56,19 @@ const Notifications = () => {
                         Notifications 
                         {unreadCount > 0 && <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/50">{unreadCount}</Badge>}
                     </h1>
-                    <p className="text-muted-foreground">Updates on your gigs, applications, and messages.</p>
+                  <p className="text-muted-foreground">Updates on your gigs, applications, and messages.</p>
+                  {lastFetchedAt && (
+                    <p className="text-xs text-muted-foreground mt-1">Last checked {new Date(lastFetchedAt).toLocaleTimeString()}</p>
+                  )}
                 </div>
                 <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={markAllAsRead} 
-                    disabled={unreadCount === 0 || loading}
-                    className="gap-2"
+                  onClick={handleMarkAll} 
+                  disabled={unreadCount === 0 || loading || markingAll}
+                  className="gap-2"
                 >
-                    <CheckCheck size={16} /> Mark all read
+                  {markingAll ? <Loader2 size={16} className="animate-spin" /> : <CheckCheck size={16} />} Mark all read
                 </Button>
             </div>
 

@@ -127,7 +127,7 @@ const ActiveGigs = () => {
         </div>
         <div className="flex flex-col items-end gap-2">
           <Badge className={cn("border", statusTone(status || gig.status))}>{status || gig.status || "active"}</Badge>
-          <span className="text-sm font-semibold text-white">{formatPrice(gig.budget)}</span>
+          <span className="text-sm font-semibold text-white">{formatPrice(gig.price ?? gig.budget)}</span>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -97,6 +97,7 @@ const GigDetail = () => {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [ratingValue, setRatingValue] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
+  const submitDisabled = applying || !agreeTerms || !proposal.trim();
   const isFetchingRef = useRef(false);
   const lastFetchRef = useRef(0);
   const navigate = useNavigate();
@@ -715,7 +716,18 @@ const GigDetail = () => {
                                 </div>
                               ))}
                               {applications.length === 0 && (
-                                <p className="text-sm text-muted-foreground text-center py-4">No applications received yet.</p>
+                                <div className="rounded-xl border border-dashed border-white/20 bg-white/5 p-4 text-center space-y-3">
+                                  <p className="text-sm font-semibold text-white">No applications yet</p>
+                                  <p className="text-xs text-muted-foreground">Share this gig to attract the right pros.</p>
+                                  <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <Button size="sm" variant="secondary" className="bg-primary/15 text-primary hover:bg-primary/25" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+                                      Copy link
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="border-white/20" onClick={() => navigate('/create-gig')}>
+                                      Post another gig
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -823,9 +835,16 @@ const GigDetail = () => {
 
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setShowApplyDialog(false)} className="border-white/10 hover:bg-white/5">Cancel</Button>
-                    <Button type="submit" disabled={applying} className="shadow-preview">
-                      {applying ? 'Sending...' : 'Submit Application'} <Send className="w-4 h-4 ml-2" />
-                    </Button>
+                    <div className="flex flex-col items-end gap-1">
+                      <Button type="submit" disabled={submitDisabled} className="shadow-preview">
+                        {applying ? 'Sending...' : 'Submit Application'} <Send className="w-4 h-4 ml-2" />
+                      </Button>
+                      {(!proposal.trim() || !agreeTerms) && (
+                        <p className="text-[11px] text-muted-foreground text-right max-w-xs">
+                          Add a cover letter and accept the terms to enable submission.
+                        </p>
+                      )}
+                    </div>
                   </DialogFooter>
                 </form>
               </DialogContent>
