@@ -74,6 +74,39 @@ function Messages() {
   // Add state for profile modal
   const [profileModalUser, setProfileModalUser] = useState<any>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileMap, setProfileMap] = useState<Record<string, any>>({});
+  const profileMapRef = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    profileMapRef.current = profileMap;
+  }, [profileMap]);
+
+  const formatProfileName = (p?: any) => {
+    if (!p) return '';
+    const full = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+    return full || p.username || '';
+  };
+
+  const loadProfiles = useCallback(async (ids: string[]) => {
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    const missing = uniqueIds.filter(id => !profileMapRef.current[id]);
+    if (missing.length === 0) return profileMapRef.current;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, avatar_url, username')
+      .in('id', missing);
+
+    if (error) throw error;
+
+    const updated = { ...profileMapRef.current };
+    data?.forEach((p: any) => {
+      updated[p.id] = p;
+    });
+
+    setProfileMap(updated);
+    return updated;
+  }, []);
 
   // Scroll to bottom on updates
   useEffect(() => {
@@ -99,26 +132,29 @@ function Messages() {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-            *,
-            sender:profiles!sender_id(id, first_name, last_name, avatar_url),
-            receiver:profiles!receiver_id(id, first_name, last_name, avatar_url)
-        `)
+        .select('*')
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      const participantIds = Array.from(new Set((data || []).flatMap((msg: any) => [msg.sender_id, msg.receiver_id])));
+      let profileLookup = profileMapRef.current;
+
+      if (participantIds.length > 0) {
+        profileLookup = await loadProfiles(participantIds);
+      }
 
       const conversationMap = new Map();
       
       data.forEach(msg => {
           const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
           if (!conversationMap.has(partnerId)) {
-               const partner = msg.sender_id === user.id ? msg.receiver : msg.sender;
+               const partner = profileLookup[partnerId];
                conversationMap.set(partnerId, {
                    id: partnerId,
                    recipient_id: partnerId,
-                   name: `${partner?.first_name || 'Unknown'} ${partner?.last_name || ''}`.trim(),
+                   name: formatProfileName(partner) || 'Unknown',
                    avatar: partner?.avatar_url,
                    lastMessage: msg.content,
                    time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }),
@@ -140,7 +176,7 @@ function Messages() {
       console.error(e);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, loadProfiles]);
 
   const fetchMessages = useCallback(async (recipientId: string) => {
     if (!user) return;
@@ -150,16 +186,17 @@ function Messages() {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:profiles!sender_id(id, first_name, last_name, avatar_url),
-          receiver:profiles!receiver_id(id, first_name, last_name, avatar_url)
-        `)
+        .select('*')
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       setMessages(data || []);
+
+      const participantIds = Array.from(new Set((data || []).flatMap((m: any) => [m.sender_id, m.receiver_id])));
+      if (participantIds.length > 0) {
+        await loadProfiles(participantIds);
+      }
       
       // Mark as read
       const unreadIds = data?.filter((m: any) => m.receiver_id === user.id && !m.read).map((m: any) => m.id) || [];
@@ -180,9 +217,10 @@ function Messages() {
     } finally {
       setIsLoadingMessages(false);
     }
-  }, [user, toast]);
+  }, [user, toast, loadProfiles]);
 
   const handleNewMessage = useCallback((payload: any) => {
+    loadProfiles([payload.sender_id, payload.receiver_id]).catch(err => console.error('Failed to load sender profile', err));
     const currentChat = filteredChats[activeChat || 0];
     if (currentChat && (payload.sender_id === currentChat.recipient_id || payload.receiver_id === currentChat.recipient_id)) {
       setMessages((prev: any) => [...prev, payload]);
@@ -194,7 +232,7 @@ function Messages() {
         description: "You have a new message",
       });
     }
-  }, [activeChat, filteredChats, fetchChats, toast]);
+  }, [activeChat, filteredChats, fetchChats, toast, loadProfiles]);
 
   // Keep stable refs to avoid dependency-driven re-renders
   fetchChatsRef.current = fetchChats;
@@ -211,6 +249,7 @@ function Messages() {
       if (error) throw error;
       
       if (data) {
+        setProfileMap(prev => ({ ...prev, [recipientId]: data }));
         // Check if a message already exists between users
         const { data: existingMessages, error: msgError } = await supabase
           .from('messages')
@@ -488,10 +527,10 @@ function Messages() {
                             <div className="space-y-4 pb-4">
                                 {messages.map((msg, i) => {
                                     const isMe = msg.sender_id === user?.id;
-                                    const senderProfile = isMe ? profile : msg.sender;
+                                    const senderProfile = profileMap[msg.sender_id];
                                     const chatFallback = chats.find(c => c.recipient_id === msg.sender_id);
                                     const senderName = senderProfile
-                                      ? (`${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim() || senderProfile.username || 'User')
+                                      ? (formatProfileName(senderProfile) || 'User')
                                       : (chatFallback?.name || 'User');
                                     const senderAvatar = senderProfile?.avatar_url || chatFallback?.avatar;
                                     return (
