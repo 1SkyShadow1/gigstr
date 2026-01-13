@@ -50,7 +50,10 @@ const ActiveGigs = () => {
           .eq("worker_id", user.id),
         supabase
           .from("gigs")
-          .select("id,title,description,budget,category,location,status,due_date,worker:profiles(id,username,avatar_url)")
+          .select(
+            `id,title,description,budget,category,location,status,due_date,worker_id,client_id,
+             worker:profiles!gigs_worker_id_fkey(id,username,avatar_url)`
+          )
           .eq("client_id", user.id)
           .in("status", ["in_progress", "active"]),
       ]);
