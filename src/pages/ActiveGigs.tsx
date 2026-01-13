@@ -46,10 +46,7 @@ const ActiveGigs = () => {
       const [applicationsRes, postedRes] = await Promise.all([
         supabase
           .from("applications")
-          .select(
-            `id,status,created_at,expected_rate,availability,gig_id,
-             gig:gigs(id,title,description,budget,category,location,status,due_date,client_id,worker_id)`
-          )
+          .select("id,status,created_at,expected_rate,availability,gig_id")
           .eq("worker_id", user.id),
         supabase
           .from("gigs")
@@ -61,16 +58,33 @@ const ActiveGigs = () => {
       if (applicationsRes.error) throw applicationsRes.error;
       if (postedRes.error) throw postedRes.error;
 
-      const activeApps = (applicationsRes.data || []).filter((app) => {
-        const gigStatus = (app.gig?.status || "").toLowerCase();
-        const appStatus = (app.status || "").toLowerCase();
-        const isGigActive = ["in_progress", "active"].includes(gigStatus);
-        const isAccepted = ["accepted", "in_progress"].includes(appStatus);
-        return app.gig && (isGigActive || isAccepted);
-      });
+      const gigIds = Array.from(
+        new Set((applicationsRes.data || []).map((app) => app.gig_id).filter(Boolean))
+      );
+
+      const gigsRes = gigIds.length
+        ? await supabase
+            .from("gigs")
+            .select("id,title,description,budget,category,location,status,due_date,client_id,worker_id")
+            .in("id", gigIds)
+        : { data: [], error: null } as any;
+
+      if (gigsRes.error) throw gigsRes.error;
+
+      const gigById = new Map(((gigsRes.data as any[]) || []).map((g) => [g.id, g]));
+
+      const activeApps = ((applicationsRes.data as any[]) || [])
+        .map((app) => ({ ...app, gig: gigById.get(app.gig_id) }))
+        .filter((app) => {
+          const gigStatus = (app.gig?.status || "").toLowerCase();
+          const appStatus = (app.status || "").toLowerCase();
+          const isGigActive = ["in_progress", "active"].includes(gigStatus);
+          const isAccepted = ["accepted", "in_progress"].includes(appStatus);
+          return app.gig && (isGigActive || isAccepted);
+        });
 
       setAssignedApplications(activeApps);
-      setPostedGigs((postedRes.data || []).filter((gig) => ["in_progress", "active"].includes((gig.status || "").toLowerCase())));
+      setPostedGigs(((postedRes.data as any[]) || []).filter((gig) => ["in_progress", "active"].includes((gig.status || "").toLowerCase())));
     } catch (err: any) {
       toast({ title: "Could not load active gigs", description: err.message, variant: "destructive" });
       setAssignedApplications([]);
