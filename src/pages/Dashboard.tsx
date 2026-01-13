@@ -204,7 +204,7 @@ const Dashboard = () => {
                 <BentoItem span="col-span-1 md:col-span-2 lg:col-span-2 row-span-2">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-semibold text-xl">Active Gigs</h3>
-                        <Link to="/gigs" className="text-xs text-primary hover:underline">View All</Link>
+                        <Link to="/active-gigs" className="text-xs text-primary hover:underline">View all</Link>
                     </div>
                     
                     <div className="space-y-4 overflow-y-auto pr-2 no-scrollbar flex-1">

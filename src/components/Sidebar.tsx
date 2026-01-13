@@ -16,7 +16,8 @@ import {
   Briefcase,
   FileText,
   Clock,
-  LayoutDashboard
+  LayoutDashboard,
+  CheckCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -158,6 +159,7 @@ const Sidebar = ({ isOpen, setIsOpen }: SidebarProps) => {
             <div className="space-y-1">
                 <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-2">Main</p>
                 <SidebarItem icon={Home} label="Dashboard" to="/dashboard" />
+                <SidebarItem icon={CheckCircle} label="Active Gigs" to="/active-gigs" />
                 <SidebarItem icon={BriefcaseBusiness} label="Find Gigs" to="/gigs" />
                 <SidebarItem icon={MessageSquare} label="Messages" to="/messages" badge={0} />
                 <SidebarItem icon={Bell} label="Notifications" to="/notifications" />

@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Gigs from "./pages/Gigs";
 import GigDetail from "./pages/GigDetail";
+import ActiveGigs from "./pages/ActiveGigs";
 import CreateGig from "./pages/CreateGig";
 import ResetPassword from "./pages/ResetPassword";
 import Messages from "./pages/Messages";
@@ -88,6 +89,7 @@ const App = () => (
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><MainLayout><Dashboard /></MainLayout></PrivateRoute>} />
+            <Route path="/active-gigs" element={<PrivateRoute><MainLayout><ActiveGigs /></MainLayout></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><MainLayout><Profile /></MainLayout></PrivateRoute>} />
             <Route path="/profile/:id" element={<PrivateRoute><MainLayout><Profile /></MainLayout></PrivateRoute>} />
             <Route path="/gigs" element={<PrivateRoute><MainLayout><Gigs /></MainLayout></PrivateRoute>} />
