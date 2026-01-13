@@ -389,12 +389,13 @@ const GigDetail = () => {
 
   const handleContractAction = async (action: string) => {
       if (action === 'message') {
-          // Message Freelancer (Client -> Worker)
-          if (gig.worker_id) {
-              navigate(`/messages?recipient=${gig.worker_id}`);
-          } else {
-              toast({ title: "Error", description: "No freelancer assigned yet.", variant: "destructive" });
-          }
+        // Message Freelancer (Client -> Worker or applicant)
+        const recipientId = gig.worker_id || application?.worker_id || applications[0]?.worker_id;
+        if (recipientId) {
+          navigate(`/messages?recipient=${recipientId}`);
+        } else {
+          toast({ title: "Error", description: "No applicant available to message yet.", variant: "destructive" });
+        }
       } else if (action === 'message_client') {
           // Message Client (Worker -> Client)
           if (gig.client_id) {
@@ -683,25 +684,33 @@ const GigDetail = () => {
                                             </span>
                                           )}
                                       </div>
-                                  </div>
-
-                                  {app.status === 'pending' && (
-                                      <div className="flex gap-2 mt-4">
-                                          <Button 
-                                            size="sm" 
-                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                                            onClick={() => updateApplicationStatus(app.id, 'accepted')}
-                                          >
-                                              Accept
-                                          </Button>
-                                          <Button 
-                                            size="sm" 
-                                            variant="destructive" 
-                                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
-                                            onClick={() => updateApplicationStatus(app.id, 'rejected')}
-                                          >
-                                              Reject
-                                          </Button>
+                                        {app.status === 'pending' && (
+                                            <div className="flex gap-2 mt-4">
+                                                <Button 
+                                                  size="sm" 
+                                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                  onClick={() => updateApplicationStatus(app.id, 'accepted')}
+                                                >
+                                                    Accept
+                                                </Button>
+                                                <Button 
+                                                  size="sm" 
+                                                  variant="destructive" 
+                                                  className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
+                                                  onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                                                >
+                                                    Reject
+                                                </Button>
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  className="w-full border-primary/30 text-primary hover:bg-primary/10"
+                                                  onClick={() => navigate(`/messages?recipient=${app.worker_id}`)}
+                                                >
+                                                  Message
+                                                </Button>
+                                            </div>
+                                        )}
                                       </div>
                                   )}
                                 </div>
