@@ -137,7 +137,7 @@ const GigDetail = () => {
         if (isUserOwner) {
           const { data: appsData, error: appsError } = await supabase
             .from('applications')
-            .select('*')
+            .select('*, worker:profiles(*)')
             .eq('gig_id', id);
           if (appsError) throw appsError;
           setApplications(appsData || []);
@@ -598,20 +598,78 @@ const GigDetail = () => {
                              <div className="text-center p-4 bg-primary/10 rounded-xl border border-primary/20 mb-4">
                                 <p className="text-primary font-medium">You posted this gig</p>
                                 <p className="text-sm text-primary/80 mt-1">{applications.length} applications received</p>
-                            <div className="mt-4 space-y-3 text-left">
+                            <div className="mt-4 space-y-4 text-left">
                               {applications.map((app) => (
-                                <div key={app.id} className="rounded-lg border border-white/10 bg-white/5 p-3">
-                                  <p className="text-sm text-white font-medium">Application</p>
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-3 whitespace-pre-wrap">{app.proposal}</p>
-                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
-                                    {app.expected_rate ? <span className="text-white font-semibold">Rate: {formatPrice(app.expected_rate)}</span> : null}
-                                    {app.availability ? <span>Availability: {app.availability}</span> : null}
-                                    <Badge variant="outline" className="border-white/20 capitalize">{app.status}</Badge>
+                                <div key={app.id} className="rounded-xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10">
+                                  <div className="flex items-start justify-between gap-4">
+                                      <div className="flex items-center gap-3">
+                                          <Avatar className="h-10 w-10 border border-white/10">
+                                              <AvatarImage src={app.worker?.avatar_url || ''} />
+                                              <AvatarFallback className="bg-primary/20 text-primary">{getInitials(app.worker?.first_name, app.worker?.last_name)}</AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                              <p className="text-sm font-bold text-white">
+                                                  {app.worker?.first_name ? `${app.worker.first_name} ${app.worker.last_name || ''}` : app.worker?.username || 'Unknown User'}
+                                              </p>
+                                              <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(app.created_at))} ago</p>
+                                          </div>
+                                      </div>
+                                      <Badge variant={app.status === 'accepted' ? 'default' : app.status === 'rejected' ? 'destructive' : 'outline'} className="capitalize">
+                                          {app.status}
+                                      </Badge>
                                   </div>
+                                  
+                                  <div className="mt-3 bg-black/20 rounded-lg p-3 text-sm text-gray-300 whitespace-pre-wrap">
+                                      {app.proposal}
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-white/5 text-xs">
+                                      {app.expected_rate && (
+                                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10 text-green-400 border border-green-500/20">
+                                              <DollarSign size={12} />
+                                              <span className="font-semibold">{Number(app.expected_rate).toLocaleString()}</span>
+                                              <span className="opacity-70">expected</span>
+                                          </div>
+                                      )}
+                                      {app.availability && (
+                                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                              <Clock size={12} />
+                                              <span>{app.availability}</span>
+                                          </div>
+                                      )}
+                                      <div className="flex items-center gap-1.5 text-muted-foreground ml-auto">
+                                          {app.worker?.jobs_completed > 0 && <span>{app.worker.jobs_completed} jobs</span>}
+                                          {app.worker?.rating > 0 && (
+                                            <span className="flex items-center gap-1 text-yellow-500">
+                                                <Star className="fill-yellow-500 w-3 h-3" /> {app.worker.rating}
+                                            </span>
+                                          )}
+                                      </div>
+                                  </div>
+
+                                  {app.status === 'pending' && (
+                                      <div className="flex gap-2 mt-4">
+                                          <Button 
+                                            size="sm" 
+                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                                            onClick={() => updateApplicationStatus(app.id, 'accepted')}
+                                          >
+                                              Accept
+                                          </Button>
+                                          <Button 
+                                            size="sm" 
+                                            variant="destructive" 
+                                            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
+                                            onClick={() => updateApplicationStatus(app.id, 'rejected')}
+                                          >
+                                              Reject
+                                          </Button>
+                                      </div>
+                                  )}
                                 </div>
                               ))}
                               {applications.length === 0 && (
-                                <p className="text-xs text-muted-foreground">No applications yet.</p>
+                                <p className="text-sm text-muted-foreground text-center py-4">No applications received yet.</p>
                               )}
                             </div>
                           </div>
