@@ -18,7 +18,6 @@ const Notifications = () => {
     filteredNotifications, 
     loading, 
     loadError,
-    loadErrorDebug,
     lastFetchedAt,
     retryFetch,
     activeTab, 
@@ -93,7 +92,6 @@ const Notifications = () => {
                         navigate={navigate}
                     lastFetchedAt={lastFetchedAt}
                     loadError={loadError}
-                    loadErrorDebug={loadErrorDebug}
                         onRetry={retryFetch}
                     />
                 </div>

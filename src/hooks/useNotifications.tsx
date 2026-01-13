@@ -23,7 +23,6 @@ export const useNotifications = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [loadErrorDebug, setLoadErrorDebug] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -34,7 +33,6 @@ export const useNotifications = () => {
     try {
       setLoading(true);
       setLoadError(null);
-      setLoadErrorDebug(null);
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -44,18 +42,19 @@ export const useNotifications = () => {
       setNotifications(data || []);
       setLastFetchedAt(Date.now());
       setLoadError(null);
-      setLoadErrorDebug(null);
     } catch (error: any) {
       console.error('Failed to load notifications', error);
-      setLoadError(error?.message || 'Failed to load notifications.');
-      try {
-        setLoadErrorDebug(JSON.stringify(error, null, 2));
-      } catch (e) {
-        setLoadErrorDebug(String(error));
+      let errorMessage = error?.message || 'Failed to load notifications.';
+      
+      // Enhance error message for common network/CORS issues
+      if (errorMessage.includes('Failed to fetch')) {
+        errorMessage = 'Unable to connect to server. Please check your internet connection or try again later. (Possible CORS/502 Error)';
       }
+      
+      setLoadError(errorMessage);
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to load notifications. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -208,7 +207,6 @@ export const useNotifications = () => {
     filteredNotifications,
     loading,
     loadError,
-    loadErrorDebug,
     lastFetchedAt,
     retryFetch: () => { setRetryCount(c => c + 1); fetchNotifications(); },
     activeTab,

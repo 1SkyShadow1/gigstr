@@ -17,7 +17,6 @@ interface NotificationsListProps {
   lastFetchedAt?: number | null;
   loadError?: string | null;
   onRetry?: () => void;
-  loadErrorDebug?: string | null;
 }
 
 export const NotificationsList = ({
@@ -28,8 +27,7 @@ export const NotificationsList = ({
   navigate,
   lastFetchedAt,
   loadError,
-  onRetry,
-  loadErrorDebug
+  onRetry
 }: NotificationsListProps) => {
 
   if (loadError && !loading) {
@@ -37,9 +35,6 @@ export const NotificationsList = ({
       <div className="p-4 text-center text-sm text-red-300 bg-red-500/5 space-y-3">
         <div>{loadError}</div>
         {onRetry && <Button size="sm" variant="outline" onClick={onRetry}>Retry</Button>}
-        {loadErrorDebug && (
-          <pre className="text-left text-[11px] text-red-200 bg-black/40 rounded-md p-2 overflow-x-auto max-h-40 whitespace-pre-wrap">{loadErrorDebug}</pre>
-        )}
       </div>
     );
   }
