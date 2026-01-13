@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { messaging, getToken, onMessage } from '@/integrations/firebase';
+// import { messaging, getToken, onMessage } from '@/integrations/firebase';
 
 // Utility to call the push notification Edge Function
 async function sendPushNotification(user_id: string, notification: { title: string; body: string; data?: any }) {
@@ -113,6 +113,7 @@ export const useNotifications = () => {
   }, [user, fetchNotifications, handleNewNotification]);
 
   // FCM Logic - Separated and guarded against errors
+  /*
   useEffect(() => {
     if (!user) return;
 
@@ -175,6 +176,7 @@ export const useNotifications = () => {
         if(unsubscribe) unsubscribe();
     };
   }, [user]); // Removed dependencies that change frequently
+  */
 
   const markAllAsRead = async () => {
     if (!user) return;
