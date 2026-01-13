@@ -51,7 +51,7 @@ const ActiveGigs = () => {
         supabase
           .from("gigs")
           .select(
-            `id,title,description,budget,category,location,status,due_date,worker_id,client_id,
+            `id,title,description,price,category,location,status,due_date,worker_id,client_id,
              worker:profiles!gigs_worker_id_fkey(id,username,avatar_url)`
           )
           .eq("client_id", user.id)
@@ -68,13 +68,13 @@ const ActiveGigs = () => {
       const gigsRes = gigIds.length
         ? await supabase
             .from("gigs")
-            .select("id,title,description,budget,category,location,status,due_date,client_id,worker_id")
+            .select("id,title,description,price,category,location,status,due_date,client_id,worker_id")
             .in("id", gigIds)
         : { data: [], error: null } as any;
 
       if (gigsRes.error) throw gigsRes.error;
 
-      const gigById = new Map(((gigsRes.data as any[]) || []).map((g) => [g.id, g]));
+      const gigById = new Map(((gigsRes.data as any[]) || []).map((g) => [g.id, { ...g, budget: g.price }]));
 
       const activeApps = ((applicationsRes.data as any[]) || [])
         .map((app) => ({ ...app, gig: gigById.get(app.gig_id) }))
@@ -87,7 +87,8 @@ const ActiveGigs = () => {
         });
 
       setAssignedApplications(activeApps);
-      setPostedGigs(((postedRes.data as any[]) || []).filter((gig) => ["in_progress", "active"].includes((gig.status || "").toLowerCase())));
+      setPostedGigs(((postedRes.data as any[]) || []).map((gig) => ({ ...gig, budget: gig.price }))
+        .filter((gig) => ["in_progress", "active"].includes((gig.status || "").toLowerCase())));
     } catch (err: any) {
       toast({ title: "Could not load active gigs", description: err.message, variant: "destructive" });
       setAssignedApplications([]);
