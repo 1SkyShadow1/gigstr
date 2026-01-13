@@ -1,6 +1,5 @@
 
-import * as React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -19,8 +18,8 @@ export const useNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   // Use a ref for toast to avoid dependency loops if useToast returns a new function on every render
-  const toastRef = React.useRef(toast);
-  React.useEffect(() => {
+  const toastRef = useRef(toast);
+  useEffect(() => {
     toastRef.current = toast;
   }, [toast]);
 
