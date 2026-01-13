@@ -1,4 +1,5 @@
 
+import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,12 @@ async function sendPushNotification(user_id: string, notification: { title: stri
 export const useNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  // Use a ref for toast to avoid dependency loops if useToast returns a new function on every render
+  const toastRef = React.useRef(toast);
+  React.useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
+
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -48,19 +55,22 @@ export const useNotifications = () => {
       
       // Enhance error message for common network/CORS issues
       if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = 'Unable to connect to server. Please check your internet connection or try again later. (Possible CORS/502 Error)';
+        errorMessage = 'Unable to connect to server. Please check your internet connection or try again later.';
       }
       
       setLoadError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      // Only toast on manual retry or critical failures, not on auto-load to avoid spam
+      if (retryCount > 0) {
+        toastRef.current({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, retryCount]); // Depend on user and retryCount only
 
   // Safety net: if loading takes too long, stop spinner and show a timeout message
   useEffect(() => {
@@ -68,21 +78,23 @@ export const useNotifications = () => {
     const timeout = setTimeout(() => {
       setLoading(false);
       setLoadError((prev) => prev || 'Notifications timed out. Please refresh.');
-    }, 3000);
+    }, 4000);
     return () => clearTimeout(timeout);
   }, [loading]);
 
   const handleNewNotification = useCallback((notification: any) => {
     setNotifications(prev => [notification, ...prev]);
-    toast({
+    toastRef.current({
       title: notification.title,
       description: notification.message,
     });
-  }, [toast]);
+  }, []);
 
+  // Initial Fetch & Real-time Subscription
   useEffect(() => {
     if (user) {
       fetchNotifications();
+
       // Subscribe to real-time notifications
       const channel = supabase
         .channel('notifications-channel')
@@ -95,48 +107,78 @@ export const useNotifications = () => {
           handleNewNotification(payload.new);
         })
         .subscribe();
-      // FCM: Request permission and get token
-      if (window.Notification && Notification.permission !== 'granted') {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            getToken(messaging, { vapidKey: 'BBm-UlrzqXZCmdrGfiIc8a3x0r0UtGJtZ-K4qotAAqOAb47YtcdJ_ifn0WbbGk9Um7IdTPpieAznXu-YVkVs' })
-              .then(async (currentToken) => {
-                if (currentToken) {
-                  // Store the FCM token in Supabase if new or changed
-                  const { data: existing } = await supabase
-                    .from('fcm_tokens')
-                    .select('token')
-                    .eq('user_id', user.id)
-                    .eq('token', currentToken)
-                    .single();
-                  if (!existing) {
-                    await supabase
-                      .from('fcm_tokens')
-                      .upsert({ user_id: user.id, token: currentToken });
-                  }
-                  console.log('FCM Token registered:', currentToken);
-                }
-              })
-              .catch((err) => {
-                console.error('An error occurred while retrieving token. ', err);
-              });
-          }
-        });
-      }
-      // Listen for foreground messages
-      onMessage(messaging, (payload) => {
-        toast({
-          title: payload.notification?.title || 'Notification',
-          description: payload.notification?.body || '',
-        });
-      });
+      
       return () => {
         supabase.removeChannel(channel);
       };
     } else {
       setLoading(false);
     }
-  }, [user, fetchNotifications, handleNewNotification, toast]);
+  }, [user, fetchNotifications, handleNewNotification]);
+
+  // FCM Logic - Separated and guarded against errors
+  useEffect(() => {
+    if (!user) return;
+
+    const initFCM = async () => {
+      try {
+        if (typeof window !== 'undefined' && window.Notification && Notification.permission !== 'granted') {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+        }
+
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+           // Basic check before invoking Firebase
+           // We place this in a try/catch to ensure it doesn't crash the app if Firebase config is bad
+           try {
+             // Dynamic import could be safer, but we use the static imports from top
+             const currentToken = await getToken(messaging, { vapidKey: 'BBm-UlrzqXZCmdrGfiIc8a3x0r0UtGJtZ-K4qotAAqOAb47YtcdJ_ifn0WbbGk9Um7IdTPpieAznXu-YVkVs' });
+             
+             if (currentToken) {
+                // Store the FCM token in Supabase
+                const { data: existing } = await supabase
+                  .from('fcm_tokens')
+                  .select('token')
+                  .eq('user_id', user.id)
+                  .eq('token', currentToken)
+                  .maybeSingle(); // maybeSingle instead of single to avoid error if 0 rows
+
+                if (!existing) {
+                  await supabase
+                    .from('fcm_tokens')
+                    .upsert({ user_id: user.id, token: currentToken });
+                }
+                console.log('FCM Token registered');
+             }
+           } catch (fcmErr) {
+             console.warn('FCM Init failed:', fcmErr);
+           }
+        }
+      } catch (err) {
+        console.warn('Notification permission/setup failed:', err);
+      }
+    };
+
+    // Execute FCM init non-blockingly
+    initFCM();
+    
+    // Listen for foreground messages - wrap in try catch setup
+    let unsubscribe = () => {};
+    try {
+        unsubscribe = onMessage(messaging, (payload) => {
+          toastRef.current({
+              title: payload.notification?.title || 'Notification',
+              description: payload.notification?.body || '',
+          });
+        });
+    } catch(e) {
+        console.warn('Firebase onMessage failed to register', e);
+    }
+
+    return () => {
+        if(unsubscribe) unsubscribe();
+    };
+  }, [user]); // Removed dependencies that change frequently
 
   const markAllAsRead = async () => {
     if (!user) return;
