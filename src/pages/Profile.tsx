@@ -371,34 +371,57 @@ const Profile = () => {
                             </TabsList>
 
                             <TabsContent value="overview" className="space-y-6">
-                                {/* Featured Project / Gig */}
-                                <Card className="glass-card overflow-hidden border-border/50">
-                                    <div className="h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
-                                        <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">
-                                            Featured Work
-                                        </div>
-                                    </div>
-                                    <CardContent className="p-6">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="text-xl font-bold font-heading">E-commerce Mobile App Redesign</h3>
-                                                <p className="text-sm text-primary mb-3">UI/UX Design • Mobile App</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold">R 12,500</div>
-                                                <div className="text-xs text-muted-foreground">Fixed Price</div>
-                                            </div>
-                                        </div>
-                                        <p className="text-muted-foreground mb-4 line-clamp-2">
-                                            Complete redesign of an existing e-commerce mobile application to improve user experience and conversion rates. Included wireframing, prototyping, and high-fidelity UI design.
-                                        </p>
-                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-1"><Star size={14} className="text-yellow-400 fill-yellow-400" /> {performance.rating.toFixed(1)} Rating</div>
-                                            <div>•</div>
-                                            <div>Completed 2 days ago</div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                                                {/* Featured Project / Gig */}
+                                                                {portfolioItems.length > 0 ? (
+                                                                    <Card className="glass-card overflow-hidden border-border/50">
+                                                                            <div className="h-48 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 relative">
+                                                                                    <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/20">
+                                                                                            Featured Work
+                                                                                    </div>
+                                                                            </div>
+                                                                            <CardContent className="p-6">
+                                                                                    {(() => {
+                                                                                        const featured = portfolioItems[0];
+                                                                                        return (
+                                                                                            <>
+                                                                                                <div className="flex justify-between items-start mb-2">
+                                                                                                        <div>
+                                                                                                                <h3 className="text-xl font-bold font-heading">{featured.title || 'Untitled project'}</h3>
+                                                                                                                {featured.category && <p className="text-sm text-primary mb-3">{featured.category}</p>}
+                                                                                                        </div>
+                                                                                                        <div className="text-right">
+                                                                                                                {featured.budget ? (
+                                                                                                                    <div className="text-lg font-bold">R {Number(featured.budget).toLocaleString()}</div>
+                                                                                                                ) : null}
+                                                                                                                {featured.pricing_model && (
+                                                                                                                    <div className="text-xs text-muted-foreground capitalize">{featured.pricing_model}</div>
+                                                                                                                )}
+                                                                                                        </div>
+                                                                                                </div>
+                                                                                                {featured.description && (
+                                                                                                    <p className="text-muted-foreground mb-4 line-clamp-2">
+                                                                                                        {featured.description}
+                                                                                                    </p>
+                                                                                                )}
+                                                                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                                                                        <div className="flex items-center gap-1"><Star size={14} className="text-yellow-400 fill-yellow-400" /> {performance.rating.toFixed(1)} Rating</div>
+                                                                                                        {featured.completed_at && <><div>•</div><div>{new Date(featured.completed_at).toLocaleDateString()}</div></>}
+                                                                                                </div>
+                                                                                            </>
+                                                                                        );
+                                                                                    })()}
+                                                                            </CardContent>
+                                                                    </Card>
+                                                                ) : (
+                                                                    <div className="p-6 rounded-2xl border border-dashed border-border/60 text-center text-muted-foreground bg-card/30">
+                                                                        <p className="mb-3">No featured work yet.</p>
+                                                                        {isOwnProfile && (
+                                                                            <Button variant="outline" className="gap-2" onClick={() => navigate('/tools/showcase')}>
+                                                                                <PlusCircle size={16} /> Add featured project
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
 
                                 {/* Recent Reviews Preview */}
                                 <div className="space-y-4">

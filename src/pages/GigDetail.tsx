@@ -600,28 +600,6 @@ const GigDetail = () => {
 
                     </motion.div>
 
-                    {/* Contract View - Shown when gig is in progress */}
-                    {gig.status === 'in_progress' && (
-                      <GigContractView 
-                        gig={gig} 
-                        isOwner={isOwner} 
-                        onAction={(action) => {
-                          if (action === 'submit_work') {
-                            // Handle work submission logic
-                            toast({
-                              title: 'Work Submitted',
-                              description: 'Your work has been submitted for review.',
-                            });
-                          } else if (action === 'release_payment') {
-                            // Handle payment release logic
-                            toast({
-                              title: 'Payment Released',
-                              description: 'The payment has been released to the freelancer.',
-                            });
-                          }
-                        }} 
-                      />
-                    )}
                 </div>
 
                 {/* Sidebar */}
