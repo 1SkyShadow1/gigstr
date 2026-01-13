@@ -53,12 +53,15 @@ const GigContractView = ({ gig, isOwner, onAction }: { gig: any, isOwner: boolea
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
            {!isOwner ? (
+                <>
+               <Button onClick={() => onAction('message_client')} variant="outline" className="w-full h-12 border-white/10 hover:bg-white/5 mb-2 sm:mb-0">Message Client</Button>
                <Button onClick={() => onAction('submit_work')} className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20">
                     Submit Work
                </Button>
+               </>
            ) : (
                 <>
-                <Button variant="outline" className="w-full h-12 border-white/10 hover:bg-white/5">Message Freelancer</Button>
+                <Button onClick={() => onAction('message')} variant="outline" className="w-full h-12 border-white/10 hover:bg-white/5">Message Freelancer</Button>
                 <Button onClick={() => onAction('release_payment')} className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20">
                     Release Payment & Complete
                 </Button>
@@ -385,16 +388,51 @@ const GigDetail = () => {
   };
 
   const handleContractAction = async (action: string) => {
-      if (action === 'submit_work') {
-          // Update application status or notify client
-          // In a real app, you'd update a 'contracts' table or similar
-          toast({ title: "Work Submitted", description: "The client has been notified." });
+      if (action === 'message') {
+          // Message Freelancer (Client -> Worker)
+          if (gig.worker_id) {
+              navigate(`/messages?recipient=${gig.worker_id}`);
+          } else {
+              toast({ title: "Error", description: "No freelancer assigned yet.", variant: "destructive" });
+          }
+      } else if (action === 'message_client') {
+          // Message Client (Worker -> Client)
+          if (gig.client_id) {
+              navigate(`/messages?recipient=${gig.client_id}`);
+          }
+      } else if (action === 'submit_work') {
+          // Notify Client that work is submitted
+          try {
+             if (gig.client_id) {
+                 await supabase.from('notifications').insert({
+                     user_id: gig.client_id, // Notify the client
+                     title: 'Work Submitted',
+                     message: `Freelancer has submitted work for "${gig.title}". Please review and release payment.`,
+                     type: 'gig',
+                     link: `/gigs/${gig.id}`,
+                 });
+             }
+             toast({ title: "Work Submitted", description: "The client has been notified." });
+          } catch (e) {
+              console.error(e);
+          }
       } else if (action === 'release_payment') {
           // Update gig status to completed
           const { error } = await supabase.from('gigs').update({ status: 'completed' }).eq('id', gig.id);
           if (error) {
               toast({ title: "Error", description: error.message, variant: "destructive" });
           } else {
+              // Notify Freelancer
+              if (gig.worker_id) {
+                  await supabase.from('notifications').insert({
+                      user_id: gig.worker_id,
+                      title: 'Payment Released',
+                      message: `Payment for "${gig.title}" has been released! The gig is marked as complete.`,
+                      type: 'payment',
+                      link: `/gigs/${gig.id}`,
+                  });
+              }
+              
               toast({ title: "Contract Completed", description: "Payment released to freelancer." });
               setShowRatingDialog(true);
               fetchGigData();
