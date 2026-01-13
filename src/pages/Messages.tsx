@@ -32,6 +32,8 @@ function Messages() {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fetchChatsRef = useRef<() => Promise<void>>();
+  const fetchMessagesRef = useRef<(recipientId: string) => Promise<void>>();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -190,6 +192,10 @@ function Messages() {
     }
   }, [activeChat, filteredChats, fetchChats, toast]);
 
+  // Keep stable refs to avoid dependency-driven re-renders
+  fetchChatsRef.current = fetchChats;
+  fetchMessagesRef.current = fetchMessages;
+
   const fetchRecipientProfile = useCallback(async (recipientId: string) => {
     try {
       const { data, error } = await supabase
@@ -275,7 +281,7 @@ function Messages() {
 
   useEffect(() => {
     if (user) {
-      fetchChats();
+      fetchChatsRef.current?.();
       
       // Subscribe to real-time messages
       const channel = supabase
@@ -304,7 +310,7 @@ function Messages() {
       filteredChats.length > 0 &&
       filteredChats[activeChat]
     ) {
-      fetchMessages(filteredChats[activeChat].recipient_id);
+      fetchMessagesRef.current?.(filteredChats[activeChat].recipient_id);
     } else if (filteredChats.length > 0 && (activeChat === null || activeChat < 0 || activeChat >= filteredChats.length)) {
       setActiveChat(0); // fallback to first chat
     }
@@ -330,15 +336,15 @@ function Messages() {
   // Mock Fetching Logic (simplified for layout) - Assume existing logic works but wrapping it
     useEffect(() => {
         if (user) {
-            setLoading(true);
-            // Simulate chat fetch
-            setTimeout(() => {
-                // In reality, this would be the actual fetch
-                fetchChats();
-                setLoading(false);
-            }, 1000);
+          setLoading(true);
+          // Simulate chat fetch
+          setTimeout(() => {
+            // In reality, this would be the actual fetch
+            fetchChatsRef.current?.();
+            setLoading(false);
+          }, 1000);
         }
-    }, [user, fetchChats]);
+      }, [user]);
 
   // Send Message Handler
     const handleSendMessage = async (e?: React.FormEvent) => {
