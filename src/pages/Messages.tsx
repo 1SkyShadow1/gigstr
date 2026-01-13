@@ -488,8 +488,12 @@ function Messages() {
                             <div className="space-y-4 pb-4">
                                 {messages.map((msg, i) => {
                                     const isMe = msg.sender_id === user?.id;
-                                    const sender = isMe ? profile : msg.sender;
-                                    const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || sender.username || 'User' : 'Unknown';
+                                    const senderProfile = isMe ? profile : msg.sender;
+                                    const chatFallback = chats.find(c => c.recipient_id === msg.sender_id);
+                                    const senderName = senderProfile
+                                      ? (`${senderProfile.first_name || ''} ${senderProfile.last_name || ''}`.trim() || senderProfile.username || 'User')
+                                      : (chatFallback?.name || 'User');
+                                    const senderAvatar = senderProfile?.avatar_url || chatFallback?.avatar;
                                     return (
                                         <motion.div 
                                             key={msg.id || i}
@@ -507,7 +511,7 @@ function Messages() {
                                               className="mr-2 shrink-0"
                                             >
                                               <Avatar className="h-8 w-8 border border-white/10">
-                                                <AvatarImage src={sender?.avatar_url} />
+                                                <AvatarImage src={senderAvatar} />
                                                 <AvatarFallback>{senderName?.[0] || 'U'}</AvatarFallback>
                                               </Avatar>
                                             </button>
