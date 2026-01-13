@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import Loader from '@/components/ui/loader';
 import { formatDistanceToNow } from 'date-fns';
 
-const Messages = () => {
+function Messages() {
   const { user, profile } = useAuth();
   const [activeChat, setActiveChat] = useState<number | null>(0);
   const [chats, setChats] = useState<any[]>([]);
@@ -556,6 +556,6 @@ const Messages = () => {
         </div>
     </AnimatedPage>
   );
-};
+}
 
 export default Messages;
