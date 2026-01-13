@@ -421,6 +421,12 @@ function Messages() {
         }
     };
 
+  const activeChatData = typeof activeChat === 'number' ? filteredChats[activeChat] : null;
+  const activeRecipientId = activeChatData?.recipient_id;
+  const activeRecipientProfile = activeRecipientId ? profileMap[activeRecipientId] : undefined;
+  const activeRecipientName = activeRecipientProfile ? (formatProfileName(activeRecipientProfile) || activeChatData?.name) : activeChatData?.name;
+  const activeRecipientAvatar = activeRecipientProfile?.avatar_url || activeChatData?.avatar;
+
   return (
     <AnimatedPage>
         <div className="h-[calc(100vh-100px)] overflow-hidden rounded-3xl bg-black/40 backdrop-blur-3xl border border-white/10 shadow-2xl flex flex-col md:flex-row relative">
@@ -494,18 +500,22 @@ function Messages() {
                     <>
                         {/* Chat Header */}
                         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-md sticky top-0 z-10">
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform">
-                                    <AvatarImage src={filteredChats[activeChat].avatar} />
-                                    <AvatarFallback>{filteredChats[activeChat].name?.[0]}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <h3 className="font-semibold">{filteredChats[activeChat].name}</h3>
-                                    <p className="text-xs text-green-400 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Online
-                                    </p>
-                                </div>
-                            </div>
+                      <button
+                        type="button"
+                        onClick={() => activeRecipientId && navigate(`/profile/${activeRecipientId}`)}
+                        className="flex items-center gap-3 text-left hover:opacity-90 transition-opacity"
+                      >
+                        <Avatar className="h-10 w-10 border border-white/10 shadow-sm cursor-pointer hover:scale-105 transition-transform">
+                          <AvatarImage src={activeRecipientAvatar} />
+                          <AvatarFallback>{activeRecipientName?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">{activeRecipientName}</h3>
+                          <p className="text-xs text-green-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Online
+                          </p>
+                        </div>
+                      </button>
                             <div className="flex gap-2 text-muted-foreground">
                                 <Button size="icon" variant="ghost" className="hover:text-primary hover:bg-primary/10 rounded-full"><Phone size={18} /></Button>
                                 <Button size="icon" variant="ghost" className="hover:text-primary hover:bg-primary/10 rounded-full"><Video size={18} /></Button>
