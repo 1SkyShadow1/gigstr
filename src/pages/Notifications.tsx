@@ -7,7 +7,7 @@ import { NotificationFilters } from '@/components/notifications/NotificationFilt
 import { useNotifications } from '@/hooks/useNotifications';
 import AnimatedPage from '@/components/AnimatedPage';
 import { motion } from 'framer-motion';
-import { Bell, CheckCheck } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const Notifications = () => {
@@ -27,54 +27,49 @@ const Notifications = () => {
     unreadCount 
   } = useNotifications();
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-black text-white">
-        <div className="text-center p-6">
-            <h2 className="text-xl font-bold mb-4">Please Sign In</h2>
-            <Button onClick={() => navigate('/auth')}>
-              Sign In
-            </Button>
-        </div>
-      </div>
-    );
-  }
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!user && !loading) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (!user) return null;
 
   return (
     <AnimatedPage>
-        <div className="max-w-4xl mx-auto space-y-6">
-             <div className="flex items-center justify-between mb-8">
+        <div className="max-w-4xl mx-auto space-y-6 pt-4 pb-12">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold font-heading mb-2 flex items-center gap-3">
                         Notifications 
-                        {unreadCount > 0 && <Badge className="bg-primary hover:bg-primary">{unreadCount}</Badge>}
+                        {unreadCount > 0 && <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/50">{unreadCount}</Badge>}
                     </h1>
-                    <p className="text-muted-foreground">Stay updated with your gigs and applications.</p>
+                    <p className="text-muted-foreground">Updates on your gigs, applications, and messages.</p>
                 </div>
                 <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={markAllAsRead} 
-                    disabled={unreadCount === 0}
-                    className="border-white/10 hover:bg-white/5 gap-2"
+                    disabled={unreadCount === 0 || loading}
+                    className="gap-2"
                 >
                     <CheckCheck size={16} /> Mark all read
                 </Button>
             </div>
 
             <motion.div 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+                className="bg-card/50 backdrop-blur-xl border border-border/50 rounded-xl overflow-hidden shadow-lg"
             >
               {loadError && (
-                <div className="p-3 text-sm text-red-300 bg-red-500/10 border-b border-red-500/20">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 text-sm bg-destructive/15 text-destructive border-b border-destructive/20 flex items-center justify-between">
                     <span>{loadError}</span>
-                    <Button size="sm" variant="outline" className="h-8" onClick={retryFetch}>Retry</Button>
-                  </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={retryFetch}>Retry</Button>
                 </div>
               )}
+              
                 <NotificationFilters 
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
@@ -82,7 +77,7 @@ const Notifications = () => {
                     unreadCount={unreadCount}
                 />
                 
-                <div className="p-0">
+                <div className="min-h-[300px]">
                     <NotificationsList 
                         notifications={notifications}
                         filteredNotifications={filteredNotifications}
@@ -90,15 +85,10 @@ const Notifications = () => {
                         activeTab={activeTab}
                         markAsRead={markAsRead}
                         navigate={navigate}
-                    lastFetchedAt={lastFetchedAt}
-                    loadError={loadError}
+                        lastFetchedAt={lastFetchedAt}
+                        loadError={loadError}
                         onRetry={retryFetch}
                     />
-                </div>
-
-                <div className="p-4 flex items-center justify-between text-xs text-muted-foreground border-t border-white/10 bg-black/30">
-                  <span>State: user {user?.id ? 'ok' : 'missing'} • loading {loading ? 'true' : 'false'} • error {loadError ? 'yes' : 'no'} • last fetch {lastFetchedAt ? new Date(lastFetchedAt).toLocaleTimeString() : '—'}</span>
-                  <Button size="sm" variant="outline" className="h-8" onClick={retryFetch}>Force refresh</Button>
                 </div>
             </motion.div>
         </div>
