@@ -150,7 +150,11 @@ function Messages() {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select(`
+          *,
+          sender:profiles!sender_id(id, first_name, last_name, avatar_url),
+          receiver:profiles!receiver_id(id, first_name, last_name, avatar_url)
+        `)
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
@@ -484,6 +488,8 @@ function Messages() {
                             <div className="space-y-4 pb-4">
                                 {messages.map((msg, i) => {
                                     const isMe = msg.sender_id === user?.id;
+                                    const sender = isMe ? profile : msg.sender;
+                                    const senderName = sender ? `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || sender.username || 'User' : 'Unknown';
                                     return (
                                         <motion.div 
                                             key={msg.id || i}
@@ -494,8 +500,30 @@ function Messages() {
                                                 isMe ? "justify-end" : "justify-start"
                                             )}
                                         >
+                                          {!isMe && (
+                                            <button
+                                              aria-label={`View ${senderName} profile`}
+                                              onClick={() => navigate(`/profile/${msg.sender_id}`)}
+                                              className="mr-2 shrink-0"
+                                            >
+                                              <Avatar className="h-8 w-8 border border-white/10">
+                                                <AvatarImage src={sender?.avatar_url} />
+                                                <AvatarFallback>{senderName?.[0] || 'U'}</AvatarFallback>
+                                              </Avatar>
+                                            </button>
+                                          )}
+                                          <div className="space-y-1 max-w-[70%]">
+                                            <button
+                                              className={cn(
+                                                "text-xs font-medium text-left",
+                                                isMe ? "text-primary-foreground/80" : "text-white/80 hover:text-white"
+                                              )}
+                                              onClick={() => navigate(`/profile/${msg.sender_id}`)}
+                                            >
+                                              {isMe ? 'You' : senderName}
+                                            </button>
                                             <div className={cn(
-                                                "max-w-[70%] p-3 px-4 rounded-2xl text-sm relative group transition-all",
+                                                "p-3 px-4 rounded-2xl text-sm relative group transition-all",
                                                 isMe 
                                                     ? "bg-primary text-primary-foreground rounded-tr-none shadow-glow-sm" 
                                                     : "bg-white/10 text-foreground rounded-tl-none border border-white/5"
@@ -503,6 +531,7 @@ function Messages() {
                                                 {msg.content}
                                                 <span className="text-[10px] opacity-50 block text-right mt-1">10:42 AM</span>
                                             </div>
+                                          </div>
                                         </motion.div>
                                     );
                                 })}
