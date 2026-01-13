@@ -51,7 +51,7 @@ const ActiveGigs = () => {
         supabase
           .from("gigs")
           .select(
-            `id,title,description,price,category,location,status,end_date,worker_id,client_id,
+            `id,title,description,price,category,location,status,end_date,start_date,worker_id,client_id,
              worker:profiles!gigs_worker_id_fkey(id,username,avatar_url)`
           )
           .eq("client_id", user.id)
@@ -68,7 +68,7 @@ const ActiveGigs = () => {
       const gigsRes = gigIds.length
         ? await supabase
             .from("gigs")
-            .select("id,title,description,price,category,location,status,end_date,client_id,worker_id")
+            .select("id,title,description,price,category,location,status,end_date,start_date,client_id,worker_id")
             .in("id", gigIds)
         : { data: [], error: null } as any;
 
@@ -117,7 +117,12 @@ const ActiveGigs = () => {
           <CardTitle className="text-xl group-hover:text-primary transition-colors">{gig.title || "Untitled gig"}</CardTitle>
           <CardDescription className="flex items-center gap-3 text-xs md:text-sm">
             <span className="flex items-center gap-1 text-muted-foreground"><MapPin size={14} /> {gig.location || "Remote"}</span>
-            <span className="flex items-center gap-1 text-muted-foreground"><Clock size={14} /> {gig.end_date ? `Due ${new Date(gig.end_date).toLocaleDateString()}` : "No due date"}</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Clock size={14} />
+              {gig.end_date || gig.start_date
+                ? `Due ${new Date(gig.end_date || gig.start_date).toLocaleDateString()}`
+                : "No due date"}
+            </span>
           </CardDescription>
         </div>
         <div className="flex flex-col items-end gap-2">
