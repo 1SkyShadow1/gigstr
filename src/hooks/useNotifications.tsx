@@ -23,6 +23,7 @@ export const useNotifications = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [loadErrorDebug, setLoadErrorDebug] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) {
@@ -33,6 +34,7 @@ export const useNotifications = () => {
     try {
       setLoading(true);
       setLoadError(null);
+      setLoadErrorDebug(null);
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -42,9 +44,15 @@ export const useNotifications = () => {
       setNotifications(data || []);
       setLastFetchedAt(Date.now());
       setLoadError(null);
+      setLoadErrorDebug(null);
     } catch (error: any) {
       console.error('Failed to load notifications', error);
       setLoadError(error?.message || 'Failed to load notifications.');
+      try {
+        setLoadErrorDebug(JSON.stringify(error, null, 2));
+      } catch (e) {
+        setLoadErrorDebug(String(error));
+      }
       toast({
         title: 'Error',
         description: error?.message || 'Failed to load notifications. Please try again.',
@@ -200,6 +208,7 @@ export const useNotifications = () => {
     filteredNotifications,
     loading,
     loadError,
+    loadErrorDebug,
     lastFetchedAt,
     retryFetch: () => { setRetryCount(c => c + 1); fetchNotifications(); },
     activeTab,
