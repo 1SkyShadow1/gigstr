@@ -264,6 +264,8 @@ const GigDetail = () => {
       if (error) throw error;
 
         // Notify the gig owner about the new application (only if applicant isn't the owner)
+        // Handled by Database Trigger
+        /* 
         if (gig.client_id && gig.client_id !== user.id) {
           const { error: notifError } = await supabase.from('notifications').insert({
             user_id: gig.client_id,
@@ -276,6 +278,7 @@ const GigDetail = () => {
             console.error('Failed to create notification', notifError);
           }
         }
+        */
 
       toast({ title: "Application sent!", description: "Good luck!" });
       setShowApplyDialog(false);
@@ -298,7 +301,8 @@ const GigDetail = () => {
       if (error) throw error;
       
       const workerId = applications.find(app => app.id === applicationId)?.worker_id;
-      // Notify applicant
+      // Notify applicant - Handled by Database Trigger
+      /*
       if (workerId) {
         await supabase.from('notifications').insert({
           id: uuidv4(),
@@ -312,6 +316,7 @@ const GigDetail = () => {
           read: false,
         });
       }
+      */
       if (status === 'accepted') {
         // Update gig status to in_progress
         const { error: gigError } = await supabase
