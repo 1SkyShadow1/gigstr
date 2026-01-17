@@ -154,16 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    // Proactively refresh session so stale tokens are cleared instead of spamming 401s
-    supabase.auth.refreshSession().then(({ data, error }) => {
-      if (error) {
-        console.warn('Session refresh failed; signing out to clear stale credentials', error);
-        handleExpiredSession();
-      } else if (data?.session) {
-        setSession(data.session);
-        setUser(data.session.user ?? null);
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, [fetchUserProfile, handleExpiredSession]);
