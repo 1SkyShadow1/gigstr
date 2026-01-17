@@ -39,14 +39,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = React.useCallback(async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      // If profile missing, create a starter profile so onboarding/guards work reliably
-      if (error || !data) {
+      // Only create a starter profile when we are certain the row is missing.
+      // Supabase returns status 406 / code PGRST116 when .single() finds 0 rows.
+      const isMissingProfile = (!!error && (status === 406 || error.code === 'PGRST116')) || (!error && !data);
+
+      if (isMissingProfile) {
         const metadata = user?.user_metadata || {};
         const starterProfile = {
           id: userId,
@@ -70,6 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setProfile(insertedProfile);
+        return;
+      }
+
+      // Any other error means fetch failed (network/RLS/etc). Avoid insert loop and just log.
+      if (error) {
+        console.error('Error fetching profile:', error);
         return;
       }
 
