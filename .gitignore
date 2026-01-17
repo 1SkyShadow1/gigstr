@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.*
 supabase/.env
+.env.local
+!.env.example
 
 # Local service config
 .vercel
