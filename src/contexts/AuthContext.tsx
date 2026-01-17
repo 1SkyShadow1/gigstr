@@ -37,6 +37,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [reauthenticatedAt, setReauthenticatedAt] = useState<Date | null>(null);
   const { toast } = useToast();
 
+  const handleExpiredSession = React.useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error during sign-out after session expiry', error);
+    } finally {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      toast({
+        title: 'Session expired',
+        description: 'Please sign in again to continue.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
+
   const fetchUserProfile = React.useCallback(async (userId: string) => {
     try {
       const { data, error, status } = await supabase
@@ -137,8 +154,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
+    // Proactively refresh session so stale tokens are cleared instead of spamming 401s
+    supabase.auth.refreshSession().then(({ data, error }) => {
+      if (error) {
+        console.warn('Session refresh failed; signing out to clear stale credentials', error);
+        handleExpiredSession();
+      } else if (data?.session) {
+        setSession(data.session);
+        setUser(data.session.user ?? null);
+      }
+    });
+
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, handleExpiredSession]);
 
   const signIn = async (email: string, password: string) => {
     try {
