@@ -13,7 +13,6 @@ import { DollarSign, MapPin, Calendar, Clock, Calendar as CalendarIcon, User, Ch
 import { formatDistanceToNow } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import AnimatedPage from '@/components/AnimatedPage';
-import { Map } from '@/components/ui/Map';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { motion } from 'framer-motion';
@@ -595,37 +594,9 @@ const GigDetail = () => {
                            </div>
                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
                                 <p className="text-sm text-muted-foreground mb-1">Duration</p>
-                                <p className="text-lg font-medium">{gig.end_date ? formatDistanceToNow(new Date(gig.end_date)) : 'Open'}</p>
+                                <p className="text-lg font-medium">{gig.deadline ? formatDistanceToNow(new Date(gig.deadline)) : 'Open'}</p>
                            </div>
                         </div>
-
-                        {/* Location Map */}
-                        <div className="mt-8">
-                            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                                <MapPin className="w-5 h-5 text-primary" />
-                                Location
-                            </h3>
-                            <div className="rounded-2xl overflow-hidden border border-white/10 h-[300px] w-full relative z-0">
-                                <Map 
-                                    latitude={gig.latitude || -26.2041} 
-                                    longitude={gig.longitude || 28.0473} 
-                                    zoom={13}
-                                    popupContent={
-                                        <div className="text-black">
-                                            <p className="font-bold">{gig.title}</p>
-                                            <p>{gig.location || 'Johannesburg, SA'}</p>
-                                        </div>
-                                    } 
-                                    className="h-full w-full"
-                                />
-                                {!gig.latitude && (
-                                    <div className="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs px-3 py-1 rounded-full text-white/80 z-[400] pointer-events-none border border-white/10">
-                                        Approximate Location
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
 
                     </motion.div>
 

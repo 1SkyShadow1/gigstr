@@ -14,24 +14,23 @@ import AnimatedPage from '@/components/AnimatedPage';
 
 const Index: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
-  const [showSplash, setShowSplash] = useState(true);
+  const { user } = useAuth();
+  const [showLoader, setShowLoader] = useState(() => !user);
 
   useEffect(() => {
-    // Minimum splash time of 800ms for branding, but don't block if loading takes longer
-    const timer = setTimeout(() => {
-        setShowSplash(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && !showSplash && user) {
+    if (user) {
       navigate('/dashboard', { replace: true });
+      return;
     }
-  }, [user, isLoading, showSplash, navigate]);
+    if (showLoader) {
+      const timer = setTimeout(() => {
+        setShowLoader(false);
+      }, 3000); // Reduced load time for snappier feel
+      return () => clearTimeout(timer);
+    }
+  }, [user, showLoader, navigate]);
 
-  if (isLoading || showSplash) {
+  if (showLoader) {
     return (
       <div
         className="fixed inset-0 z-50 flex flex-col items-center justify-center min-h-screen min-w-full bg-background"
