@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const lastFetchRef = useRef(0);
 
     const fetchStats = useCallback(async () => {
       if (!user) return;
@@ -105,7 +106,11 @@ const Dashboard = () => {
       navigate('/auth');
     }
     if (user) {
-        fetchStats();
+        const now = Date.now();
+        if (now - lastFetchRef.current > 2000) {
+          lastFetchRef.current = now;
+          fetchStats();
+        }
 
         // Realtime Subscription
         const channel = supabase
@@ -113,7 +118,13 @@ const Dashboard = () => {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'gigs' },
-                () => fetchStats()
+                () => {
+                  const tnow = Date.now();
+                  if (tnow - lastFetchRef.current > 2000) {
+                    lastFetchRef.current = tnow;
+                    fetchStats();
+                  }
+                }
             )
             .subscribe();
 

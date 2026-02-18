@@ -29,12 +29,7 @@ const Gigs = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
 
-    // Fetch Logic remains the same, simplified for clarity in UI update
-    useEffect(() => {
-        fetchGigs();
-    }, []);
-
-    const fetchGigs = async () => {
+    const fetchGigs = React.useCallback(async () => {
         setLoading(true);
         setLoadError(null);
         const { data: gigsData, error } = await supabase
@@ -53,7 +48,12 @@ const Gigs = () => {
         }
 
         setLoading(false);
-    };
+    }, [toast]);
+
+    // Fetch Logic remains the same, simplified for clarity in UI update
+    useEffect(() => {
+        fetchGigs();
+    }, [fetchGigs]);
 
     const filteredGigs = gigs.filter(gig => {
         const matchesSearch = gig.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 

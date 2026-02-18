@@ -78,7 +78,20 @@ const TrustLock = () => {
                     setAgreements([]);
                     return;
                 }
-                setAgreements((data as Agreement[]) || []);
+                
+                const loadedAgreements = (data || []).map(item => ({
+                    ...item,
+                    milestones: Array.isArray(item.milestones) 
+                        ? item.milestones.map((m: any) => ({
+                            id: m?.id || 0,
+                            name: m?.name || '',
+                            amount: Number(m?.amount) || 0,
+                            status: m?.status || 'pending'
+                        }))
+                        : []
+                })) as Agreement[];
+
+                setAgreements(loadedAgreements);
             } catch (err: any) {
                 toast({ title: 'Could not load agreements', description: err.message, variant: 'destructive' });
                 setAgreements([]);
@@ -135,7 +148,19 @@ const TrustLock = () => {
 
           if (error) throw error;
 
-          setAgreements([data as Agreement, ...agreements]);
+          const newAgreement: Agreement = {
+              ...data,
+              milestones: Array.isArray(data.milestones) 
+                  ? data.milestones.map((m: any) => ({
+                      id: m?.id || 0,
+                      name: m?.name || '',
+                      amount: Number(m?.amount) || 0,
+                      status: m?.status || 'pending'
+                  }))
+                  : []
+          };
+
+          setAgreements([newAgreement, ...agreements]);
           setIsCreateOpen(false);
           setNewTitle(''); setNewClient(''); setNewAmount('');
           toast({ title: 'Agreement created', description: 'Share the link with your client to deposit.' });

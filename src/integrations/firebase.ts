@@ -1,23 +1,41 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// Import messaging for push notifications
-import { getMessaging, onMessage, getToken } from "firebase/messaging";
+import { initializeApp, type FirebaseApp } from "firebase/app";
+import { getAnalytics, type Analytics } from "firebase/analytics";
+import { getMessaging, onMessage, getToken, type Messaging } from "firebase/messaging";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBON9YXVjpfLGf6gaucVDJfMPZ8cD9SJVg",
-  authDomain: "gigstr-4c14d.firebaseapp.com",
-  projectId: "gigstr-4c14d",
-  storageBucket: "gigstr-4c14d.appspot.com",
-  messagingSenderId: "525883483001",
-  appId: "1:525883483001:web:422a159437245c6aea05a8",
-  measurementId: "G-Y4JSB6KNZM"
-};
+const cfg = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+} as const;
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const messaging = getMessaging(app);
+let app: FirebaseApp | null = null;
+let analytics: Analytics | null = null;
+let messaging: Messaging | null = null;
 
-export { app, analytics, messaging, onMessage, getToken }; 
+const hasAllConfig = Object.values(cfg).every((v) => typeof v === "string" && v.length > 0);
+
+if (hasAllConfig) {
+  app = initializeApp(cfg as Record<string, string>);
+  // Analytics requires a browser environment and user consent in some regions
+  try {
+    analytics = getAnalytics(app);
+  } catch {
+    analytics = null;
+  }
+  try {
+    messaging = getMessaging(app);
+  } catch {
+    messaging = null;
+  }
+} else {
+  // Degrade gracefully if Firebase is not configured
+  app = null;
+  analytics = null;
+  messaging = null;
+}
+
+export { app, analytics, messaging, onMessage, getToken };

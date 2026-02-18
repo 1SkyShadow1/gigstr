@@ -454,6 +454,42 @@ export type Database = {
         }
         Relationships: []
       }
+      trustlock_agreements: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          client: string;
+          amount: number;
+          status: string;
+          milestones: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          client: string;
+          amount: number;
+          status?: string;
+          milestones?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          client?: string;
+          amount?: number;
+          status?: string;
+          milestones?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       trustlock_disputes: {
         Row: {
           id: string;

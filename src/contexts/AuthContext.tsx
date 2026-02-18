@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [reauthenticatedAt, setReauthenticatedAt] = useState<Date | null>(null);
   const { toast } = useToast();
+  const lastProfileFetchRef = React.useRef<{ userId: string | null; at: number }>({ userId: null, at: 0 });
 
   const handleExpiredSession = React.useCallback(async () => {
     try {
@@ -130,13 +131,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user && event !== 'SIGNED_OUT') {
-          // Fetch user profile using setTimeout to avoid potential deadlocks
-          setTimeout(() => {
-            fetchUserProfile(currentSession.user.id);
-          }, 0);
-        } else {
+
+        const shouldFetch =
+          !!currentSession?.user &&
+          (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED');
+
+        if (shouldFetch) {
+          const now = Date.now();
+          const last = lastProfileFetchRef.current;
+          const sameUser = last.userId === currentSession!.user.id;
+          const tooSoon = now - last.at < 5000; // throttle to max once per 5s
+          if (!(sameUser && tooSoon)) {
+            lastProfileFetchRef.current = { userId: currentSession!.user.id, at: now };
+            // Fetch user profile using setTimeout to avoid potential deadlocks
+            setTimeout(() => {
+              fetchUserProfile(currentSession!.user.id);
+            }, 0);
+          }
+        } else if (!currentSession?.user || event === 'SIGNED_OUT') {
           setProfile(null);
         }
       }

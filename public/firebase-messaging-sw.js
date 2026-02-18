@@ -1,6 +1,6 @@
-// Give the service worker access to Firebase Messaging.
-importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
+// Give the service worker access to Firebase Messaging (compat for SW context).
+importScripts('https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/12.0.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyBON9YXVjpfLGf6gaucVDJfMPZ8cD9SJVg",
@@ -16,12 +16,24 @@ const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/favicon.ico'
+  const title = payload?.notification?.title || 'Notification';
+  const options = {
+    body: payload?.notification?.body || '',
+    icon: '/icon.png',
+    data: payload?.data || {},
   };
+  self.registration.showNotification(title, options);
+});
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
-}); 
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  const url = event.notification?.data?.url || '/notifications';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
