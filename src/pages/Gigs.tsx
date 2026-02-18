@@ -6,18 +6,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, MapPin, Search, Filter, Heart, ArrowUpRight, Zap, Briefcase } from 'lucide-react';
+import { Clock, MapPin, Search, Filter, Heart, ArrowUpRight, Zap, Briefcase, LayoutList, Map as MapIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AnimatedPage from '@/components/AnimatedPage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Loader from '@/components/ui/loader';
+import { BaseMap, Marker, Popup } from '@/components/ui/Map';
 
 const categories = [
   "All Categories",
   "Plumbing", "Electrical", "Domestic Work", "Gardening", 
   "Cleaning", "Childcare", "Transportation", "Repairs", "IT Support"
 ];
+
+const getGigCoordinates = (gig: any): [number, number] => {
+    if (gig.latitude && gig.longitude) {
+        return [gig.latitude, gig.longitude];
+    }
+    // Deterministic random based on ID
+    const hash = (gig.id || 'default').split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+    // Pseudo-random offset from JHB center (approx 10km radius)
+    const latOffset = ((hash % 1000) - 500) / 10000; 
+    const lngOffset = (((hash * 13) % 1000) - 500) / 10000;
+    return [-26.2041 + latOffset, 28.0473 + lngOffset];
+};
 
 const Gigs = () => {
     const [gigs, setGigs] = useState<any[]>([]);
@@ -26,6 +39,7 @@ const Gigs = () => {
     const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All Categories');
+    const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -66,18 +80,43 @@ const Gigs = () => {
         <AnimatedPage>
             <div className="space-y-8">
                 {/* Header Filter Section */}
-                <div className="flex flex-col md:flex-row gap-4 items-end md:items-center justify-between sticky top-0 md:top-4 z-30 p-4 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
-                    <div className="relative w-full md:w-96">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input 
-                            placeholder="Search for opportunities..." 
-                            className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 transition-all rounded-xl"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                <div className="flex flex-col lg:flex-row gap-4 items-end lg:items-center justify-between sticky top-0 md:top-4 z-30 p-4 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl">
+                    <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-4 items-center">
+                        <div className="relative w-full sm:w-96">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input 
+                                placeholder="Search for opportunities..." 
+                                className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 transition-all rounded-xl"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={cn(
+                                    "p-2 rounded-lg transition-all",
+                                    viewMode === 'list' ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-white"
+                                )}
+                                title="List View"
+                            >
+                                <LayoutList size={20} />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('map')}
+                                className={cn(
+                                    "p-2 rounded-lg transition-all",
+                                    viewMode === 'map' ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-white"
+                                )}
+                                title="Map View"
+                            >
+                                <MapIcon size={20} />
+                            </button>
+                        </div>
                     </div>
                      
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 w-full md:w-auto">
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 w-full lg:w-auto">
                          {categories.slice(0, 5).map(cat => (
                              <button
                                 key={cat}
@@ -127,6 +166,35 @@ const Gigs = () => {
                             </div>
                         ))}
                     </div>
+                ) : viewMode === 'map' ? (
+                     <div className="h-[calc(100vh-250px)] rounded-2xl overflow-hidden border border-white/10 relative z-0">
+                        <BaseMap center={[-26.2041, 28.0473]} zoom={11} className="h-full w-full">
+                            {filteredGigs.map(gig => {
+                                const [lat, lng] = getGigCoordinates(gig);
+                                return (
+                                    <Marker key={gig.id} position={[lat, lng]}>
+                                        <Popup>
+                                            <div className="min-w-[200px]">
+                                                <h3 className="font-bold text-black text-sm mb-1">{gig.title}</h3>
+                                                <p className="text-gray-600 text-xs mb-2 line-clamp-2">{gig.description}</p>
+                                                <div className="flex justify-between items-center">
+                                                    <Badge className="bg-primary text-white text-[10px] h-5">{gig.category}</Badge>
+                                                    <span className="text-green-600 font-bold text-xs">R {gig.price}</span>
+                                                </div>
+                                                <Button 
+                                                    size="sm" 
+                                                    className="w-full mt-2 h-7 text-xs"
+                                                    onClick={() => navigate(`/gigs/${gig.id}`)}
+                                                >
+                                                    View Details
+                                                </Button>
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                )
+                            })}
+                        </BaseMap>
+                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <AnimatePresence>

@@ -12,6 +12,7 @@ import Loader from '@/components/ui/loader';
 import AnimatedPage from '@/components/AnimatedPage';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-ZA', {
@@ -35,6 +36,40 @@ const BentoItem = ({ children, className, span = "col-span-1" }: { children: Rea
         {children}
     </motion.div>
 );
+
+const RevenueChart = () => {
+    const data = [
+        { name: 'Mon', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Tue', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Wed', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Thu', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Fri', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Sat', total: Math.floor(Math.random() * 5000) + 1000 },
+        { name: 'Sun', total: Math.floor(Math.random() * 5000) + 1000 },
+    ];
+
+    return (
+        <div className="h-[200px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data}>
+                    <defs>
+                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R${value}`} />
+                    <Tooltip 
+                        contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: "8px" }}
+                        itemStyle={{ color: "#fff" }}
+                    />
+                    <Area type="monotone" dataKey="total" stroke="#8884d8" fillOpacity={1} fill="url(#colorTotal)" />
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
 
 const Dashboard = () => {
   const { user, profile, isLoading } = useAuth();
@@ -164,21 +199,18 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)]">
                 
                 {/* 1. Main Stats Logic - Large Block */}
-                <BentoItem span="col-span-1 md:col-span-2 lg:col-span-2 row-span-1" className="bg-gradient-to-br from-primary/20 to-purple-900/20 border-primary/20">
+                <BentoItem span="col-span-1 md:col-span-2 lg:col-span-2 row-span-2" className="bg-gradient-to-br from-primary/20 to-purple-900/20 border-primary/20">
                     <div className="flex justify-between items-start mb-4">
                          <div className="p-3 bg-primary/20 rounded-2xl">
                             <DollarSign className="h-6 w-6 text-primary" />
                          </div>
-                         <span className="bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full">Live</span>
+                         <span className="bg-green-500/10 text-green-400 text-xs font-bold px-2 py-1 rounded-full">Live Revenue</span>
                     </div>
-                    <div className="mt-auto">
+                    <div>
                         <p className="text-muted-foreground font-medium">Total Earnings</p>
                         <h2 className="text-4xl font-bold font-heading mt-1 text-white">{formatPrice(earnings)}</h2>
                     </div>
-                    {/* Background decoration */}
-                    <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
-                         <TrendingUp size={120} />
-                    </div>
+                    <RevenueChart />
                 </BentoItem>
 
                 {/* 2. Quick Actions */}
