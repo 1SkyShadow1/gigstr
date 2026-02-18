@@ -17,6 +17,7 @@ async function sendPushNotification(user_id: string, notification: { title: stri
 export const useNotifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const userId = user?.id;
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ export const useNotifications = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   const fetchNotifications = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setLoading(false);
       setLoadError(null);
       return;
@@ -37,7 +38,7 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       setNotifications(data || []);
@@ -64,7 +65,7 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, retryCount, toast]);
+  }, [userId, retryCount, toast]);
 
   // Safety net: if loading takes too long, stop spinner and show a timeout message
   useEffect(() => {
@@ -86,7 +87,7 @@ export const useNotifications = () => {
 
   // Initial Fetch & Real-time Subscription
   useEffect(() => {
-    if (user) {
+    if (userId) {
       fetchNotifications();
 
       // Subscribe to real-time notifications
@@ -96,7 +97,7 @@ export const useNotifications = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${userId}`
         }, (payload) => {
           handleNewNotification(payload.new);
         })
@@ -108,7 +109,7 @@ export const useNotifications = () => {
     } else {
       setLoading(false);
     }
-  }, [user, fetchNotifications, handleNewNotification]);
+  }, [userId, fetchNotifications, handleNewNotification]);
 
   // FCM Logic - Separated and guarded against errors
   /*

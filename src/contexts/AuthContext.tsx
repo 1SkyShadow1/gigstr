@@ -55,8 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [toast]);
 
-  const fetchUserProfile = React.useCallback(async (userId: string) => {
+  const fetchUserProfile = React.useCallback(async (currentUser: User) => {
     try {
+      const userId = currentUser.id;
       const { data, error, status } = await supabase
         .from('profiles')
         .select('*')
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isMissingProfile = (!!error && (status === 406 || error.code === 'PGRST116')) || (!error && !data);
 
       if (isMissingProfile) {
-        const metadata = user?.user_metadata || {};
+        const metadata = currentUser.user_metadata || {};
         const starterProfile = {
           id: userId,
           first_name: typeof metadata.first_name === 'string' ? metadata.first_name : null,
@@ -101,8 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // If skills are present in auth metadata but missing in profile, sync them once
-      const metadataSkills = Array.isArray(user?.user_metadata?.skills)
-        ? (user?.user_metadata?.skills as string[]).filter(Boolean)
+      const metadataSkills = Array.isArray(currentUser.user_metadata?.skills)
+        ? (currentUser.user_metadata?.skills as string[]).filter(Boolean)
         : [];
 
       if ((!data?.skills || data.skills.length === 0) && metadataSkills.length > 0) {
@@ -123,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error in profile fetch:', error);
     }
-  }, [user?.user_metadata]);
+  }, []);
 
   useEffect(() => {
     // Set up listener for auth state changes
@@ -145,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             lastProfileFetchRef.current = { userId: currentSession!.user.id, at: now };
             // Fetch user profile using setTimeout to avoid potential deadlocks
             setTimeout(() => {
-              fetchUserProfile(currentSession!.user.id);
+              fetchUserProfile(currentSession!.user);
             }, 0);
           }
         } else if (!currentSession?.user || event === 'SIGNED_OUT') {
@@ -160,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(initialSession?.user ?? null);
       
       if (initialSession?.user) {
-        fetchUserProfile(initialSession.user.id);
+        fetchUserProfile(initialSession.user);
       }
       
       setIsLoading(false);
